@@ -1,3 +1,26 @@
+/* ── Home button (injected via JS below, styled here) ────────────────
+   A floating "kipuka.dev" link in the top-left of the sidebar
+   ──────────────────────────────────────────────────────────────────── */
+
+.kipuka-home-link {
+  display: block;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #f0883e !important;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid #30363d;
+  text-decoration: none !important;
+  transition: background 0.2s;
+}
+
+.kipuka-home-link:hover {
+  background: #161b22;
+}
+
+.kipuka-home-link::before {
+  content: '\2190  ';
+}
+
 /* ── kipuka.dev unified theme ─────────────────────────────────────────
    Match the landing page: #0d1117 bg, #c9d1d9 text, #f0883e accent
    Applied on top of mdBook's navy theme

@@ -3,6 +3,25 @@
    Injected via --extend-css during cargo doc build
    ──────────────────────────────────────────────────────────────────── */
 
+/* ── Home banner ─────────────────────────────────────────────────── */
+.kipuka-home-banner {
+  display: block;
+  background: #0d1117;
+  border-bottom: 1px solid #30363d;
+  padding: 0.5rem 1.25rem;
+  font-family: ui-monospace, 'Cascadia Code', 'Fira Code', monospace;
+  font-size: 0.8rem;
+  color: #f0883e !important;
+  text-decoration: none !important;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.kipuka-home-banner:hover {
+  background: #161b22;
+}
+
 :root[data-theme="dark"],
 :root[data-theme="ayu"] {
   --main-background-color: #0d1117;
