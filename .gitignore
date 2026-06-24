@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.env
+.env.*
+!.env.example
+.DS_Store
+
+# Generated cargo doc output — rebuild with:
+#   cd ../kipuka && cargo doc --workspace --no-deps
+#   cp -r target/doc ../kipuka-dev/api
+api/

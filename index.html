@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kipuka — EST Enrollment Server</title>
+  <meta name="description" content="An EST (RFC 7030) enrollment server with Multi-CA High Availability, HSM support, and NIAP CA Protection Profile compliance. Built in Rust.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg:         #0d1117;
+      --bg-card:    #161b22;
+      --bg-code:    #0a0e14;
+      --border:     #30363d;
+      --text:       #c9d1d9;
+      --text-bright:#f0f6fc;
+      --accent:     #f0883e;
+      --accent-dim: #d18616;
+      --mono:       ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, monospace;
+      --sans:       -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    /* ── Hero ────────────────────────────────── */
+    .hero {
+      padding: 6rem 0 4rem;
+      text-align: center;
+    }
+
+    .hero-name {
+      font-family: var(--mono);
+      font-size: 4rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      letter-spacing: -0.02em;
+      margin-bottom: 0.25rem;
+    }
+
+    .hero-accent {
+      color: var(--accent);
+    }
+
+    .hero-tagline {
+      font-family: var(--mono);
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-desc {
+      font-size: 1.125rem;
+      max-width: 640px;
+      margin: 0 auto 2rem;
+      color: var(--text);
+    }
+
+    .hero-metaphor {
+      font-size: 0.875rem;
+      color: #8b949e;
+      font-style: italic;
+      max-width: 520px;
+      margin: 0 auto;
+      border-left: 2px solid var(--accent-dim);
+      padding-left: 1rem;
+      text-align: left;
+    }
+
+    /* ── Section ─────────────────────────────── */
+    section { padding: 3rem 0; }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 1.5rem;
+      color: var(--text-bright);
+      margin-bottom: 1.5rem;
+    }
+
+    .section-title::before {
+      content: '# ';
+      color: var(--accent-dim);
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0;
+    }
+
+    /* ── Features Grid ───────────────────────── */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.25rem;
+      transition: border-color 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: var(--accent-dim);
+    }
+
+    .feature-card h3 {
+      font-family: var(--mono);
+      font-size: 0.925rem;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+      font-size: 0.85rem;
+      color: #8b949e;
+      line-height: 1.5;
+    }
+
+    /* ── Architecture ────────────────────────── */
+    .arch-diagram {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      line-height: 1.6;
+      color: #8b949e;
+      white-space: pre;
+    }
+
+    .arch-diagram .hl { color: var(--accent); }
+    .arch-diagram .dim { color: #484f58; }
+
+    /* ── Quick Start ─────────────────────────── */
+    .quickstart-block {
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+    }
+
+    .quickstart-block code {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre;
+      display: block;
+    }
+
+    .quickstart-block .comment {
+      color: #484f58;
+    }
+
+    .quickstart-block .cmd {
+      color: var(--text-bright);
+    }
+
+    .quickstart-block .flag {
+      color: var(--accent);
+    }
+
+    .quickstart-label {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── Compliance ───────────────────────────── */
+    .compliance-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      list-style: none;
+    }
+
+    .compliance-list li {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.4rem 0.75rem;
+      color: #8b949e;
+    }
+
+    .compliance-list li strong {
+      color: var(--text-bright);
+    }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      padding: 3rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .footer-links a {
+      font-family: var(--mono);
+      font-size: 0.875rem;
+      color: #8b949e;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer-license {
+      font-size: 0.75rem;
+      color: #484f58;
+    }
+
+    /* ── Responsive ───────────────────────────── */
+    @media (max-width: 600px) {
+      .hero-name { font-size: 2.75rem; }
+      .hero { padding: 4rem 0 3rem; }
+      .features { grid-template-columns: 1fr; }
+      .footer-links { flex-direction: column; gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav -->
+  <nav style="border-bottom:1px solid #30363d;padding:1rem 0;">
+    <div class="container" style="display:flex;align-items:center;gap:2rem;">
+      <a href="/" style="font-family:var(--mono);font-size:1.25rem;font-weight:700;color:var(--text-bright);">kipuka</a>
+      <ul style="display:flex;gap:1.5rem;list-style:none;">
+        <li><a href="/docs/" style="font-family:var(--mono);font-size:0.85rem;color:#8b949e;">Docs</a></li>
+        <li><a href="/config/" style="font-family:var(--mono);font-size:0.85rem;color:#8b949e;">Config</a></li>
+        <li><a href="https://codeberg.org/czinda/kipuka" style="font-family:var(--mono);font-size:0.85rem;color:#8b949e;">Source</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="container">
+      <h1 class="hero-name">kipuka</h1>
+      <p class="hero-tagline">EST enrollment server</p>
+      <p class="hero-desc">
+        A Rust implementation of RFC 7030 with multi-CA high availability,
+        hardware security module support, and NIAP CA Protection Profile compliance.
+      </p>
+      <blockquote class="hero-metaphor">
+        <strong>kipuka</strong> (Hawaiian) &mdash; an area of older land surrounded by
+        younger lava flows, an island of stability. Like a kipuka preserves established
+        growth amid change, this server provides stable certificate enrollment amid
+        evolving security requirements.
+      </blockquote>
+    </div>
+  </header>
+
+  <hr class="divider">
+
+  <!-- Features -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Features</h2>
+      <div class="features">
+        <div class="feature-card">
+          <h3>Full RFC 7030</h3>
+          <p>All six EST operations: cacerts, simpleenroll, simplereenroll,
+             fullcmc, serverkeygen, and csrattrs. Plus STAR auto-renewal (RFC 8739).</p>
+        </div>
+        <div class="feature-card">
+          <h3>Multi-CA &amp; HA</h3>
+          <p>Active-passive, round-robin, weighted, and latency-based failover
+             strategies across multiple certificate authorities.</p>
+        </div>
+        <div class="feature-card">
+          <h3>HSM Support</h3>
+          <p>PKCS#11 integration with Entrust nShield, Utimaco CryptoServer,
+             Thales Luna, and Kryoptic for dev/test.</p>
+        </div>
+        <div class="feature-card">
+          <h3>NIAP &amp; FIPS</h3>
+          <p>CA Protection Profile v2.0 mapping, FIPS 140-3 via HSM,
+             CA/B Forum Baseline Requirements enforcement.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Post-Quantum Ready</h3>
+          <p>ML-DSA signing (FIPS 204), ML-KEM key encapsulation (FIPS 203),
+             and composite hybrid algorithms.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Flexible Auth</h3>
+          <p>mTLS client certificates, one-time passwords with expiration
+             and use limits, and GSSAPI/Kerberos enterprise SSO.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Multi-Database</h3>
+          <p>SQLite for single-node, PostgreSQL and MariaDB for production.
+             Unified via sqlx Any driver with automatic migrations.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Container-First</h3>
+          <p>Multi-arch OCI images (x86_64 &amp; arm64). Compose profiles for
+             SQLite, PostgreSQL, MariaDB, and HSM development.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Architecture -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Architecture</h2>
+      <div class="arch-diagram"><span class="dim">                      Clients</span>
+<span class="dim">                        |</span>
+<span class="dim">                   TLS + mTLS/OTP</span>
+<span class="dim">                        |</span>
+                +-------<span class="hl">+</span>-------+
+                |  <span class="hl">kipuka-est</span>   |   axum routes, EST protocol
+                +---<span class="hl">+</span>---<span class="hl">+</span>---<span class="hl">+</span>---+
+                    |   |   |
+          +---------+   |   +---------+
+          |             |             |
+     <span class="hl">kipuka-otp</span>    <span class="hl">kipuka-hsm</span>    <span class="hl">kipuka-util</span>
+     OTP lifecycle  PKCS#11      shared types
+                    HSM ops         &amp; config
+          |             |
+          |        <span class="hl">kipuka-dogtag</span>
+          |         Dogtag PKI
+          |         REST client
+          |
+     +----+----+       <span class="hl">kipuka-coap</span>
+     |  <span class="hl">sqlx</span>   |       CoAP transport
+     | sqlite  |       (RFC 7252)
+     | postgres|
+     | mariadb |
+     +---------+</div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Quick Start -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Quick Start</h2>
+
+      <p class="quickstart-label">Container</p>
+      <div class="quickstart-block"><code><span class="comment"># Pull the image</span>
+<span class="cmd">podman pull</span> <span class="flag">registry.heebh.st/heebus/kipuka:latest</span>
+
+<span class="comment"># Run with your configuration</span>
+<span class="cmd">podman run</span> --rm \
+  -v ./kipuka.toml:/etc/kipuka/kipuka.toml:ro \
+  -v ./certs:/etc/kipuka/certs:ro \
+  -p <span class="flag">9443</span>:9443 \
+  registry.heebh.st/heebus/kipuka:latest</code></div>
+
+      <p class="quickstart-label">Build from source</p>
+      <div class="quickstart-block"><code><span class="cmd">cargo build</span> --release
+<span class="cmd">cp</span> kipuka.toml.example kipuka.toml
+<span class="cmd">cargo run</span> --release -- <span class="flag">--config</span> kipuka.toml</code></div>
+    </div>
+  </section>
+
+  <hr class="divider">
+
+  <!-- Compliance -->
+  <section>
+    <div class="container">
+      <h2 class="section-title">Compliance</h2>
+      <ul class="compliance-list">
+        <li><strong>RFC 7030</strong> EST Protocol</li>
+        <li><strong>RFC 8951</strong> EST Clarifications</li>
+        <li><strong>RFC 5272</strong> CMC (Full)</li>
+        <li><strong>RFC 8739</strong> STAR Auto-Renewal</li>
+        <li><strong>RFC 7252</strong> CoAP Transport</li>
+        <li><strong>CA/B Forum</strong> Baseline Requirements</li>
+        <li><strong>NIAP CA PP</strong> v2.0</li>
+        <li><strong>FIPS 140-3</strong> via HSM</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <nav class="footer-links">
+        <a href="https://codeberg.org/czinda/kipuka">Source (Codeberg)</a>
+        <a href="/api/">API Reference</a>
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/kipuka.toml.example">Configuration</a>
+      </nav>
+      <p class="footer-license">
+        GPL-3.0-or-later &middot; Built with Rust on
+        <a href="https://codeberg.org/abbra/synta">Synta</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>

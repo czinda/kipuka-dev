@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation — kipuka</title>
+  <meta name="description" content="kipuka EST server documentation — API reference, architecture, compliance, and HSM configuration guides.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root {
+      --bg:         #0d1117;
+      --bg-card:    #161b22;
+      --bg-code:    #0a0e14;
+      --border:     #30363d;
+      --text:       #c9d1d9;
+      --text-bright:#f0f6fc;
+      --accent:     #f0883e;
+      --accent-dim: #d18616;
+      --mono:       ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, monospace;
+      --sans:       -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* ── Nav ─────────────────────────────────── */
+    nav {
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 0;
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: #8b949e;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover,
+    .nav-links a.active { color: var(--accent); }
+
+    /* ── Page Header ─────────────────────────── */
+    .page-header {
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header h1 {
+      font-family: var(--mono);
+      font-size: 2rem;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: #8b949e;
+      max-width: 640px;
+    }
+
+    /* ── Doc Cards ────────────────────────────── */
+    section { padding: 2.5rem 0; }
+
+    .section-title {
+      font-family: var(--mono);
+      font-size: 1.25rem;
+      color: var(--text-bright);
+      margin-bottom: 1rem;
+    }
+    .section-title::before {
+      content: '## ';
+      color: var(--accent-dim);
+    }
+
+    .doc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .doc-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      transition: border-color 0.2s;
+    }
+    .doc-card:hover { border-color: var(--accent-dim); text-decoration: none; }
+
+    .doc-card h3 {
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+    }
+    .doc-card p {
+      font-size: 0.875rem;
+      color: #8b949e;
+      flex-grow: 1;
+    }
+    .doc-card .tag {
+      display: inline-block;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--accent);
+      background: rgba(240, 136, 62, 0.1);
+      border: 1px solid rgba(240, 136, 62, 0.25);
+      border-radius: 3px;
+      padding: 0.15rem 0.5rem;
+      margin-top: 0.75rem;
+      width: fit-content;
+    }
+
+    /* ── EST Endpoints ────────────────────────── */
+    .endpoint-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .endpoint-table th,
+    .endpoint-table td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .endpoint-table th {
+      font-family: var(--mono);
+      color: var(--accent);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .endpoint-table td { color: var(--text); }
+    .endpoint-table code {
+      font-family: var(--mono);
+      font-size: 0.825rem;
+      background: var(--bg-code);
+      padding: 0.15rem 0.4rem;
+      border-radius: 3px;
+    }
+    .endpoint-table tr:hover td { background: rgba(255,255,255,0.02); }
+
+    /* ── Footer ───────────────────────────────── */
+    footer {
+      padding: 2rem 0;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    .footer-license {
+      font-size: 0.75rem;
+      color: #484f58;
+    }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
+
+    @media (max-width: 600px) {
+      .nav-inner { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .doc-grid { grid-template-columns: 1fr; }
+      .endpoint-table { font-size: 0.8rem; }
+      .endpoint-table th, .endpoint-table td { padding: 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="container nav-inner">
+      <a href="/" class="nav-brand">kipuka</a>
+      <ul class="nav-links">
+        <li><a href="/" >Home</a></li>
+        <li><a href="/docs/" class="active">Docs</a></li>
+        <li><a href="/config/">Config</a></li>
+        <li><a href="https://codeberg.org/czinda/kipuka">Source</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="container">
+    <div class="page-header">
+      <h1>Documentation</h1>
+      <p>Guides, API reference, and compliance documentation for the kipuka EST enrollment server.</p>
+    </div>
+
+    <!-- Guides -->
+    <section>
+      <h2 class="section-title">Guides</h2>
+      <div class="doc-grid">
+        <a href="/config/" class="doc-card">
+          <h3>Configuration Reference</h3>
+          <p>Complete annotated reference for kipuka.toml — server, TLS, database, CA, EST, HSM, OTP, HA, and audit settings.</p>
+          <span class="tag">kipuka.toml</span>
+        </a>
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/docs/architecture.md" class="doc-card">
+          <h3>Architecture</h3>
+          <p>Component diagrams, crate structure, EST operation data flows, and HSM integration points.</p>
+          <span class="tag">architecture.md</span>
+        </a>
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/docs/PROJECT.md" class="doc-card">
+          <h3>Development Guide</h3>
+          <p>EST protocol testing with curl and openssl, HSM development setup with Kryoptic, and database migration procedures.</p>
+          <span class="tag">PROJECT.md</span>
+        </a>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Compliance -->
+    <section>
+      <h2 class="section-title">Compliance</h2>
+      <div class="doc-grid">
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/docs/compliance/niap-ca-pp.md" class="doc-card">
+          <h3>NIAP CA Protection Profile</h3>
+          <p>Mapping of kipuka capabilities to NIAP CA PP v2.0 security functional requirements.</p>
+          <span class="tag">NIAP CA PP v2.0</span>
+        </a>
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/docs/compliance/cab-forum.md" class="doc-card">
+          <h3>CA/B Forum Baseline Requirements</h3>
+          <p>Certificate profile enforcement, validity constraints, and BR compliance mapping.</p>
+          <span class="tag">CA/B Forum BR</span>
+        </a>
+        <a href="https://codeberg.org/czinda/kipuka/src/branch/main/docs/compliance/hsm-compatibility.md" class="doc-card">
+          <h3>HSM Compatibility</h3>
+          <p>Per-vendor PKCS#11 configuration, key generation capabilities, and known limitations for Entrust, Utimaco, Thales, and Kryoptic.</p>
+          <span class="tag">PKCS#11</span>
+        </a>
+      </div>
+    </section>
+
+    <hr class="divider">
+
+    <!-- API Reference -->
+    <section>
+      <h2 class="section-title">EST Endpoints</h2>
+      <table class="endpoint-table">
+        <thead>
+          <tr>
+            <th>Operation</th>
+            <th>Path</th>
+            <th>Method</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>CA Certs</td>
+            <td><code>/.well-known/est/cacerts</code></td>
+            <td><code>GET</code></td>
+            <td>Retrieve current CA certificates (no auth required)</td>
+          </tr>
+          <tr>
+            <td>Simple Enroll</td>
+            <td><code>/.well-known/est/simpleenroll</code></td>
+            <td><code>POST</code></td>
+            <td>Initial certificate enrollment (OTP or mTLS auth)</td>
+          </tr>
+          <tr>
+            <td>Simple Re-enroll</td>
+            <td><code>/.well-known/est/simplereenroll</code></td>
+            <td><code>POST</code></td>
+            <td>Certificate renewal with existing client cert (mTLS)</td>
+          </tr>
+          <tr>
+            <td>Full CMC</td>
+            <td><code>/.well-known/est/fullcmc</code></td>
+            <td><code>POST</code></td>
+            <td>Full CMC enrollment (RFC 5272) for complex requests</td>
+          </tr>
+          <tr>
+            <td>Server Keygen</td>
+            <td><code>/.well-known/est/serverkeygen</code></td>
+            <td><code>POST</code></td>
+            <td>Server-side key generation with KRA escrow</td>
+          </tr>
+          <tr>
+            <td>CSR Attributes</td>
+            <td><code>/.well-known/est/csrattrs</code></td>
+            <td><code>GET</code></td>
+            <td>Advertise supported CSR attributes and algorithms</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:1rem; font-size:0.85rem; color:#8b949e;">
+        All endpoints support
+        <a href="https://www.rfc-editor.org/rfc/rfc7030#section-3.2.2">EST label routing</a>:
+        <code>/.well-known/est/<em>&lt;label&gt;</em>/simpleenroll</code>
+      </p>
+    </section>
+
+    <hr class="divider">
+
+    <!-- Rust API Docs -->
+    <section>
+      <h2 class="section-title">Rust API Reference</h2>
+      <div class="doc-grid">
+        <a href="/api/kipuka/" class="doc-card">
+          <h3>kipuka (main crate)</h3>
+          <p>Server binary, axum routes, configuration, authentication, and CA management.</p>
+          <span class="tag">cargo doc</span>
+        </a>
+        <a href="/api/kipuka_est/" class="doc-card">
+          <h3>kipuka-est</h3>
+          <p>EST protocol operations, CSR parsing, certificate issuance, and CMS message handling.</p>
+          <span class="tag">cargo doc</span>
+        </a>
+        <a href="/api/kipuka_hsm/" class="doc-card">
+          <h3>kipuka-hsm</h3>
+          <p>PKCS#11 HSM integration, key operations, signing, and slot management.</p>
+          <span class="tag">cargo doc</span>
+        </a>
+      </div>
+    </section>
+
+  </div>
+
+  <footer>
+    <div class="container">
+      <p class="footer-license">
+        GPL-3.0-or-later &middot; <a href="/">kipuka.dev</a>
+      </p>
+    </div>
+  </footer>
+
+</body>
+</html>
