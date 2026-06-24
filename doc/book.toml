@@ -12,3 +12,4 @@ default-theme = "navy"
 preferred-dark-theme = "navy"
 git-repository-url = "https://codeberg.org/czinda/kipuka"
 site-url = "/doc/"
+additional-css = ["theme/custom.css"]

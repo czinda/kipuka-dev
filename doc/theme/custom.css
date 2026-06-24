@@ -1,0 +1,234 @@
+/* ── kipuka.dev unified theme ─────────────────────────────────────────
+   Match the landing page: #0d1117 bg, #c9d1d9 text, #f0883e accent
+   Applied on top of mdBook's navy theme
+   ──────────────────────────────────────────────────────────────────── */
+
+:root {
+  --kipuka-bg:         #0d1117;
+  --kipuka-bg-card:    #161b22;
+  --kipuka-bg-code:    #0a0e14;
+  --kipuka-border:     #30363d;
+  --kipuka-text:       #c9d1d9;
+  --kipuka-text-bright:#f0f6fc;
+  --kipuka-accent:     #f0883e;
+  --kipuka-accent-dim: #d18616;
+  --kipuka-mono:       ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, monospace;
+}
+
+/* ── Sidebar ─────────────────────────────────── */
+.sidebar,
+html.navy .sidebar {
+  background: var(--kipuka-bg) !important;
+  border-right: 1px solid var(--kipuka-border) !important;
+}
+
+.sidebar .sidebar-scrollbox {
+  background: var(--kipuka-bg) !important;
+}
+
+.sidebar .chapter li a,
+html.navy .sidebar .chapter li a {
+  color: #8b949e !important;
+}
+
+.sidebar .chapter li a:hover,
+.sidebar .chapter li a.active,
+html.navy .sidebar .chapter li a:hover,
+html.navy .sidebar .chapter li a.active {
+  color: var(--kipuka-accent) !important;
+}
+
+.sidebar .chapter li.part-title {
+  color: var(--kipuka-text-bright) !important;
+  font-weight: 700;
+  border-bottom: 1px solid var(--kipuka-border);
+  padding-bottom: 0.4rem;
+  margin-bottom: 0.4rem;
+}
+
+/* ── Main content area ───────────────────────── */
+.page,
+.content,
+html.navy .page,
+html.navy .content {
+  background: var(--kipuka-bg) !important;
+}
+
+.content main,
+html.navy .content main {
+  color: var(--kipuka-text) !important;
+}
+
+/* ── Menu bar ────────────────────────────────── */
+.menu-bar,
+html.navy .menu-bar,
+.menu-bar.bordered {
+  background: var(--kipuka-bg) !important;
+  border-bottom: 1px solid var(--kipuka-border) !important;
+}
+
+.menu-bar i,
+.menu-bar .icon-button,
+html.navy .menu-bar i,
+html.navy .menu-bar .icon-button {
+  color: #8b949e !important;
+}
+
+.menu-bar i:hover,
+.menu-bar .icon-button:hover {
+  color: var(--kipuka-accent) !important;
+}
+
+/* ── Typography ──────────────────────────────── */
+.content h1,
+html.navy .content h1 {
+  color: var(--kipuka-text-bright) !important;
+  border-bottom: 1px solid var(--kipuka-border) !important;
+}
+
+.content h2,
+.content h3,
+.content h4,
+html.navy .content h2,
+html.navy .content h3,
+html.navy .content h4 {
+  color: var(--kipuka-text-bright) !important;
+}
+
+.content a,
+html.navy .content a {
+  color: var(--kipuka-accent) !important;
+}
+
+.content a:hover {
+  color: #f69d50 !important;
+}
+
+/* ── Code blocks ─────────────────────────────── */
+.content pre,
+html.navy .content pre {
+  background: var(--kipuka-bg-code) !important;
+  border: 1px solid var(--kipuka-border) !important;
+  border-radius: 6px !important;
+}
+
+.content code,
+html.navy .content code {
+  font-family: var(--kipuka-mono) !important;
+}
+
+.content p > code,
+.content li > code,
+.content td > code,
+html.navy .content p > code,
+html.navy .content li > code,
+html.navy .content td > code {
+  background: var(--kipuka-bg-code) !important;
+  border: 1px solid var(--kipuka-border) !important;
+  border-radius: 3px !important;
+  padding: 0.1rem 0.35rem !important;
+  color: var(--kipuka-text-bright) !important;
+}
+
+/* ── Tables ──────────────────────────────────── */
+.content table,
+html.navy .content table {
+  border-collapse: collapse !important;
+}
+
+.content table th,
+html.navy .content table th {
+  background: var(--kipuka-bg-card) !important;
+  color: var(--kipuka-accent) !important;
+  border: 1px solid var(--kipuka-border) !important;
+  font-family: var(--kipuka-mono) !important;
+  font-size: 0.85rem;
+}
+
+.content table td,
+html.navy .content table td {
+  border: 1px solid var(--kipuka-border) !important;
+  color: var(--kipuka-text) !important;
+}
+
+.content table tr:hover td {
+  background: rgba(255,255,255,0.02) !important;
+}
+
+/* ── Blockquotes ─────────────────────────────── */
+.content blockquote,
+html.navy .content blockquote {
+  border-left: 3px solid var(--kipuka-accent-dim) !important;
+  background: var(--kipuka-bg-card) !important;
+  color: #8b949e !important;
+  padding: 0.75rem 1rem !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+
+/* ── Nav chapter arrows and buttons ──────────── */
+.nav-chapters,
+html.navy .nav-chapters {
+  color: #8b949e !important;
+}
+
+.nav-chapters:hover {
+  color: var(--kipuka-accent) !important;
+}
+
+/* ── Theme popup ─────────────────────────────── */
+#theme-list,
+html.navy #theme-list {
+  background: var(--kipuka-bg-card) !important;
+  border: 1px solid var(--kipuka-border) !important;
+}
+
+#theme-list li,
+html.navy #theme-list li {
+  color: var(--kipuka-text) !important;
+}
+
+/* ── Search ──────────────────────────────────── */
+#searchbar,
+html.navy #searchbar {
+  background: var(--kipuka-bg-card) !important;
+  border: 1px solid var(--kipuka-border) !important;
+  color: var(--kipuka-text) !important;
+}
+
+.searchresults a,
+html.navy .searchresults a {
+  color: var(--kipuka-accent) !important;
+}
+
+.search-results .teaser,
+.searchresults .teaser {
+  color: #8b949e !important;
+}
+
+/* ── Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--kipuka-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--kipuka-border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #484f58;
+}
+
+/* ── HR / Dividers ───────────────────────────── */
+.content hr {
+  border-color: var(--kipuka-border) !important;
+}
+
+/* ── Strong/Bold ─────────────────────────────── */
+.content strong {
+  color: var(--kipuka-text-bright) !important;
+}
