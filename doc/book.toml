@@ -1,0 +1,14 @@
+[book]
+title = "kipuka documentation"
+authors = ["Chris Zinda"]
+language = "en"
+src = "src"
+
+[build]
+build-dir = "../doc-build"
+
+[output.html]
+default-theme = "navy"
+preferred-dark-theme = "navy"
+git-repository-url = "https://codeberg.org/czinda/kipuka"
+site-url = "/doc/"

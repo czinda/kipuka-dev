@@ -9,3 +9,8 @@ node_modules/
 #   cd ../kipuka && cargo doc --workspace --no-deps
 #   cp -r target/doc ../kipuka-dev/api
 api/
+
+# mdBook build output
+doc-build/
+deploy/
+doc-site/
