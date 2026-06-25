@@ -514,7 +514,7 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Built for Private Infrastructure</h2>
-        <p class="section-subtitle">All six EST operations, multi-CA failover, HSM key protection, OCSP, and NIAP-compliant audit logging.</p>
+        <p class="section-subtitle">All six EST operations, CMP, multi-CA failover, HSM key protection, and NIAP-compliant audit logging.</p>
       </div>
       <div class="features">
         <div class="feature-card">
@@ -524,9 +524,15 @@
              STAR auto-renewal (RFC 8739) with integrated renewal loop.</p>
         </div>
         <div class="feature-card">
+          <h3>CMP Protocol</h3>
+          <p>Certificate Management Protocol (RFC 4210) with MAC-based and
+             signature-based protection verification. Initialization, certification,
+             and revocation request handling.</p>
+        </div>
+        <div class="feature-card">
           <h3>Multi-CA &amp; HA</h3>
           <p>Active-passive, round-robin, weighted, and latency-based failover
-             strategies across multiple certificate authorities with circuit breaker health tracking.</p>
+             strategies with circuit breaker health tracking and automatic recovery.</p>
         </div>
         <div class="feature-card">
           <h3>HSM / PKCS#11</h3>
@@ -550,10 +556,10 @@
              One config line to switch. Automatic migrations.</p>
         </div>
         <div class="feature-card">
-          <h3>Authentication &amp; OCSP</h3>
-          <p>OTP with timing-safe validation, mTLS with OCSP revocation checking,
-             and Kerberos/GSSAPI principal extraction. Full OCSP client with
-             signature verification and caching.</p>
+          <h3>Authentication</h3>
+          <p>OTP with timing-safe validation, mTLS with OCSP revocation checking
+             and stapling, GSSAPI/Kerberos with cryptographic token verification,
+             and CMS SignedData authentication for RA enrollment.</p>
         </div>
       </div>
     </div>
@@ -592,14 +598,15 @@
   <!-- Stats Callout -->
   <section class="stats-callout">
     <div class="container">
-      <div class="stats-number">10</div>
+      <div class="stats-number">11</div>
       <p class="stats-label">RFCs and standards implemented</p>
       <p class="stats-desc">
-        All six EST operations (RFC 7030), Full CMC, STAR renewal, OCSP revocation checking,
-        post-quantum ML-DSA and ML-KEM, and NIAP CA Protection Profile compliance.
+        EST enrollment, CMP certificate management, Full CMC, STAR renewal,
+        OCSP revocation checking, post-quantum ML-DSA/ML-KEM, and NIAP compliance.
       </p>
       <ul class="compliance-list">
         <li><strong>RFC 7030</strong> EST</li>
+        <li><strong>RFC 4210</strong> CMP</li>
         <li><strong>RFC 8951</strong> Clarifications</li>
         <li><strong>RFC 5272</strong> CMC</li>
         <li><strong>RFC 8739</strong> STAR</li>
