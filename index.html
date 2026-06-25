@@ -491,7 +491,7 @@
       <h1 class="hero-name">kipuka</h1>
       <p class="hero-tagline">EST enrollment server</p>
       <p class="hero-desc">
-        A standards-compliant certificate enrollment server
+        A standards-compliant, post-quantum ready certificate enrollment server
         for private networks. Built in Rust.
       </p>
       <div class="hero-ctas">
@@ -532,6 +532,12 @@
           <h3>HSM / PKCS#11</h3>
           <p>CA private keys loaded from HSMs via PKCS#11. Entrust nShield, Utimaco,
              Thales Luna, and Kryoptic for dev/test.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Post-Quantum Ready</h3>
+          <p>ML-DSA signing (FIPS 204) and ML-KEM key encapsulation (FIPS 203)
+             in enrollment and server keygen. Composite hybrid algorithms
+             for migration. Requires OpenSSL 3.5+.</p>
         </div>
         <div class="feature-card">
           <h3>Dogtag PKI</h3>
@@ -586,11 +592,11 @@
   <!-- Stats Callout -->
   <section class="stats-callout">
     <div class="container">
-      <div class="stats-number">8</div>
-      <p class="stats-label">IETF RFCs and standards implemented</p>
+      <div class="stats-number">10</div>
+      <p class="stats-label">RFCs and standards implemented</p>
       <p class="stats-desc">
-        All six EST operations (RFC 7030), Full CMC (RFC 5272), STAR renewal (RFC 8739),
-        OCSP revocation checking (RFC 6960), and NIAP CA Protection Profile compliance.
+        All six EST operations (RFC 7030), Full CMC, STAR renewal, OCSP revocation checking,
+        post-quantum ML-DSA and ML-KEM, and NIAP CA Protection Profile compliance.
       </p>
       <ul class="compliance-list">
         <li><strong>RFC 7030</strong> EST</li>
@@ -598,12 +604,14 @@
         <li><strong>RFC 5272</strong> CMC</li>
         <li><strong>RFC 8739</strong> STAR</li>
         <li><strong>RFC 6960</strong> OCSP</li>
+        <li><strong>FIPS 204</strong> ML-DSA</li>
+        <li><strong>FIPS 203</strong> ML-KEM</li>
         <li><strong>CA/B Forum</strong> BR</li>
         <li><strong>NIAP</strong> CA PP v2.0</li>
         <li><strong>FIPS 140-3</strong> via HSM</li>
       </ul>
       <p style="margin-top:1rem;font-size:0.8rem;color:#484f58;font-family:var(--mono);">
-        Planned: RFC 7252 CoAP &middot; ML-DSA (FIPS 204) &middot; ML-KEM (FIPS 203)
+        Planned: RFC 7252 CoAP &middot; Composite ML-DSA hybrids
       </p>
       <a href="/doc/compliance/rfc-support.html" class="terminal-link" style="margin-top:1.5rem;">View RFC Compliance &rarr;</a>
     </div>
