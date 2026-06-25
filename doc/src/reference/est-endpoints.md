@@ -367,6 +367,73 @@ The order lifecycle follows these states:
 
 ---
 
+## CoAP Transport
+
+In addition to the HTTPS transport described above, kipuka supports EST-over-CoAP
+(RFC 9483) for constrained IoT devices.  When the `[coap]` section is enabled,
+the server listens on UDP port 5684 (DTLS) and accepts CoAP requests that map
+to the same EST operations.
+
+### Abbreviated URI Paths
+
+RFC 9483 section 5.1 defines shortened CoAP URI paths to reduce message overhead
+on constrained links:
+
+| CoAP Path | EST Endpoint | Method | Description |
+|-----------|--------------|--------|-------------|
+| `/sen` | `/simpleenroll` | POST | Simple enrollment (CSR to certificate) |
+| `/sren` | `/simplereenroll` | POST | Simple re-enrollment (renewal) |
+| `/skg` | `/serverkeygen` | POST | Server-side key generation |
+| `/att` | `/csrattrs` | GET | CSR attributes hint |
+| `/crts` | `/cacerts` | GET | CA certificate chain |
+
+**Example:** To enroll a constrained device, POST a DER-encoded PKCS#10 CSR to
+`coaps://est.example.com:5684/sen`.
+
+### Content-Format IDs
+
+CoAP uses numeric Content-Format IDs in lieu of MIME type strings.  The
+following IDs are defined by RFC 9483 section 5.4:
+
+| ID | MIME Equivalent | Usage |
+|----|-----------------|-------|
+| 280 | `application/pkcs7-mime; smime-type=server-generated` | Server-generated key response |
+| 281 | `application/pkcs7-mime; smime-type=certs-only` | Certificate-only response (`/cacerts`, enrollment) |
+| 285 | `application/pkcs10` | PKCS#10 CSR request body |
+| 286 | `application/pkcs8` | PKCS#8 encrypted private key |
+| 287 | `application/csrattrs` | CSR attributes response |
+
+### Block-Wise Transfer
+
+CoAP messages are limited by UDP MTU (typically 1280 bytes for IPv6).  When a
+certificate chain or CSR exceeds the negotiated block size, kipuka automatically
+uses block-wise transfer (RFC 7959):
+
+- **Block1** -- Reassembles fragmented CSR uploads from the client
+- **Block2** -- Splits certificate responses into negotiated block sizes (16-1024 bytes)
+
+This is especially important for post-quantum certificates (ML-DSA-87 signatures
+can exceed 7 KB), where a full certificate chain may require 20+ blocks at the
+default 512-byte block size.
+
+The block size is configurable via `[coap].block_size` in `kipuka.toml`.
+
+### Differences from HTTPS Transport
+
+| Aspect | HTTPS | CoAP/DTLS |
+|--------|-------|-----------|
+| Transport | TCP + TLS (rustls) | UDP + DTLS (OpenSSL) |
+| Encoding | Base64-encoded DER | Raw DER (no base64) |
+| Content-Type | MIME strings | Numeric Content-Format IDs |
+| URI paths | `/.well-known/est/simpleenroll` | `/sen` |
+| Authentication | OTP, mTLS, GSSAPI | PSK, DTLS client certificates |
+| Large payloads | HTTP chunked transfer | CoAP block-wise transfer (RFC 7959) |
+
+See the [CoAP Operator Guide](../operator/coap.md) for configuration and
+deployment details.
+
+---
+
 ## Error responses
 
 All EST endpoints return standard HTTP error codes.  The response body for

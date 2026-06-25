@@ -601,7 +601,8 @@
 <span class="info"> INFO</span> <span class="log">kipuka: opening database 'sqlite:///var/lib/kipuka/kipuka.db'</span>
 <span class="info"> INFO</span> <span class="log">kipuka::ca: loaded CA 'rsa-ca' (RSA 3072-bit, expires 2035-06-24)</span>
 <span class="info"> INFO</span> <span class="log">kipuka::tls: TLS 1.2+ with client auth (optional)</span>
-<span class="info"> INFO</span> <span class="log">kipuka: EST server listening on 0.0.0.0:9443</span></code></div>
+<span class="info"> INFO</span> <span class="log">kipuka: EST server listening on 0.0.0.0:9443</span>
+<span class="info"> INFO</span> <span class="log">kipuka::coap: CoAP/DTLS listener on 0.0.0.0:5684</span></code></div>
       </div>
       <a href="/doc/quickstart/first-run.html" class="terminal-link">Read the full quickstart guide &rarr;</a>
     </div>
@@ -687,29 +688,30 @@
         <p class="section-subtitle">A Cargo workspace with six internal crates and zero external CA dependencies.</p>
       </div>
       <div class="arch-diagram"><span class="dim">                      Clients</span>
-<span class="dim">                        |</span>
-<span class="dim">                   TLS + mTLS/OTP</span>
-<span class="dim">                        |</span>
-                +-------<span class="hl">+</span>-------+
-                |  <span class="hl">kipuka-est</span>   |   axum routes, EST protocol
-                +---<span class="hl">+</span>---<span class="hl">+</span>---<span class="hl">+</span>---+
-                    |   |   |
-          +---------+   |   +---------+
-          |             |             |
-     <span class="hl">kipuka-otp</span>    <span class="hl">kipuka-hsm</span>    <span class="hl">kipuka-util</span>
-     OTP lifecycle  PKCS#11      shared types
-                    HSM ops         &amp; config
-          |             |
-          |        <span class="hl">kipuka-dogtag</span>
-          |         Dogtag PKI
-          |         REST client
-          |
-     +----+----+       <span class="hl">kipuka-coap</span>
-     |  <span class="hl">sqlx</span>   |       CoAP transport
-     | sqlite  |       (RFC 7252)
-     | postgres|
-     | mariadb |
-     +---------+</div>
+<span class="dim">                     /        \</span>
+<span class="dim">           TLS + mTLS/OTP    CoAP/DTLS</span>
+<span class="dim">                  |              |</span>
+           +------<span class="hl">+</span>------+  <span class="hl">kipuka-coap</span>
+           | <span class="hl">kipuka-est</span>  |  CoAP/DTLS
+           |  axum HTTP  |  (RFC 9483)
+           +--<span class="hl">+</span>---<span class="hl">+</span>--<span class="hl">+</span>--+------+
+              |   |  |         |
+    +---------+   |  +-------+ |
+    |             |          | |
+<span class="hl">kipuka-otp</span>   <span class="hl">kipuka-hsm</span>  <span class="hl">kipuka-util</span>
+OTP lifecycle PKCS#11     shared types
+              HSM ops        &amp; config
+    |             |
+    |        <span class="hl">kipuka-dogtag</span>
+    |         Dogtag PKI
+    |         REST client
+    |
++---+-----+
+|  <span class="hl">sqlx</span>   |
+| sqlite  |
+| postgres|
+| mariadb |
++---------+</div>
     </div>
   </section>
 

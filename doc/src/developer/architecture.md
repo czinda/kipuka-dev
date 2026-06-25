@@ -8,29 +8,30 @@ compilation level and allows operators to build only the features they need.
 
 ```
                       Clients
-                        |
-                   TLS + mTLS/OTP
-                        |
-                +-------+-------+
-                |   kipuka-est  |     axum routes, EST protocol
-                +---+---+---+---+
-                    |   |   |
-          +---------+   |   +---------+
-          |             |             |
-     kipuka-otp    kipuka-hsm    kipuka-util
-     OTP lifecycle  PKCS#11      shared types
-                    HSM ops         & config
-          |             |
-          |        kipuka-dogtag
-          |         Dogtag PKI
-          |         REST client
-          |
-     +----+----+       kipuka-coap
-     |   sqlx  |       CoAP transport
-     | sqlite  |       (RFC 7252)
-     | postgres|
-     | mariadb |
-     +---------+
+                     /        \
+           TLS + mTLS/OTP    CoAP/DTLS (UDP)
+                  |              |
+           +------+------+  kipuka-coap
+           |  kipuka-est  |  CoAP/DTLS transport
+           |  axum HTTP   |  (RFC 9483 / RFC 7252)
+           +--+---+--+---+------+
+              |   |  |          |
+    +---------+   |  +--------+ |
+    |             |           | |
+  kipuka-otp  kipuka-hsm  kipuka-util
+  OTP lifecycle PKCS#11    shared types
+               HSM ops       & config
+    |             |
+    |        kipuka-dogtag
+    |         Dogtag PKI
+    |         REST client
+    |
+  +---+-----+
+  |   sqlx  |
+  | sqlite  |
+  | postgres|
+  | mariadb |
+  +---------+
 ```
 
 ### Crate responsibilities
@@ -42,7 +43,7 @@ compilation level and allows operators to build only the features they need.
 | **kipuka-otp** | One-time password lifecycle: generation (CSPRNG), hashing (argon2id / bcrypt), storage, validation, rate limiting, and expiration.  Exposes an internal API consumed by kipuka-est for enrollment authentication and by the admin API for token provisioning. |
 | **kipuka-util** | Shared types and configuration parsing.  Owns `kipuka.toml` deserialization (via serde + toml), X.509 helper functions, ASN.1 OID constants, error types, and the `zeroize`-aware wrappers for sensitive data. |
 | **kipuka-dogtag** | REST client for Red Hat Certificate System / Dogtag PKI.  Translates EST enrollment requests into Dogtag profile-based certificate issuance calls, delegating signing to a full CA back-end instead of local key material. |
-| **kipuka-coap** | CoAP (RFC 7252) transport layer for constrained-device enrollment.  Maps CoAP request/response semantics onto the same EST handlers used by the HTTPS path, enabling bandwidth-constrained IoT devices to enroll without HTTP overhead. |
+| **kipuka-coap** | CoAP/DTLS transport layer (RFC 7252 / RFC 9483) for constrained-device enrollment.  The `CoapDtlsServer` opens a UDP listener with DTLS 1.2/1.3 encryption (via OpenSSL), parses CoAP messages, and dispatches EST operations through the `EstHandler` trait.  Block-wise transfer (RFC 7959) splits large certificate payloads across multiple datagrams.  The main crate provides a `CoapEstHandler` that bridges CoAP requests to the shared EST enrollment logic, so both HTTPS and CoAP paths use identical CA signing, CSR validation, and audit code. |
 
 Dependencies flow strictly downward: `kipuka-est` depends on all other crates;
 leaf crates (`kipuka-util`, `kipuka-coap`) depend on nothing project-internal
@@ -50,8 +51,10 @@ except `kipuka-util`.
 
 ## EST operation data flow
 
-A certificate enrollment request traverses the following path from TLS
-handshake to certificate issuance.
+A certificate enrollment request traverses one of two transport paths
+-- HTTPS or CoAP/DTLS -- before reaching the shared EST enrollment logic.
+
+### HTTPS transport (default)
 
 ```
 1. Client opens TLS connection to kipuka-est (rustls).
@@ -91,6 +94,34 @@ handshake to certificate issuance.
 10. Audit: an audit event is written to the configured destinations
     (file, syslog, database) with request metadata, outcome, and
     certificate fingerprint.
+```
+
+### CoAP/DTLS transport (constrained devices)
+
+```
+1. Client sends a CoAP message over UDP to the CoapDtlsServer listener
+   (default port 5684).
+2. OpenSSL performs the DTLS 1.2/1.3 handshake.
+   - PSK mode: shared secret authenticates the device.
+   - Certificate mode: client certificate validated against trust anchors.
+3. The CoAP message is parsed: method (GET/POST), URI path, Content-Format
+   option, and payload are extracted.
+4. URI path routing maps abbreviated CoAP paths to EST operations:
+   /sen   -> SimpleEnroll
+   /sren  -> SimpleReenroll
+   /skg   -> ServerKeygen
+   /att   -> CsrAttrs
+   /crts  -> CaCerts
+5. Block-wise transfer (RFC 7959): if the request uses Block1 options,
+   incoming blocks are reassembled into the full CSR payload.  Responses
+   exceeding the negotiated block size use Block2 for chunked delivery.
+6. The CoapEstHandler (implements the EstHandler trait) bridges the
+   parsed request to the same CSR validation, certificate construction,
+   and signing logic used by the HTTPS path (steps 5-9 above).
+7. The response (raw DER, not base64) is returned as a CoAP 2.05 Content
+   message with the appropriate Content-Format ID (e.g., 281 for
+   certs-only, 287 for csrattrs).
+8. Audit: an audit event is written identically to the HTTPS path.
 ```
 
 ## Multi-CA HA failover state machine

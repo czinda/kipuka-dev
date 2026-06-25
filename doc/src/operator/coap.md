@@ -13,6 +13,25 @@ CoAP (Constrained Application Protocol, RFC 7252) is designed for resource-const
 
 The `kipuka-coap` crate implements the full RFC 9483 specification with DTLS 1.2/1.3 support, block-wise transfer for large payloads (critical for post-quantum certificates), and session resumption.
 
+## Implementation Architecture
+
+The CoAP transport is implemented across two layers:
+
+- **`kipuka-coap` crate** -- Contains the `CoapDtlsServer` that manages the UDP listener and DTLS sessions (via OpenSSL), parses CoAP messages, handles block-wise transfer reassembly, and dispatches EST operations through the `EstHandler` trait.
+- **`CoapEstHandler`** (in the main `kipuka-est` crate) -- Implements the `EstHandler` trait, bridging parsed CoAP requests to the same CA signing, CSR validation, and certificate issuance logic used by the HTTPS transport. This ensures both transports produce identical certificates and audit records.
+
+When CoAP is enabled, `CoapDtlsServer::run()` is called at startup alongside the axum HTTP server. Both listeners share the same `AppState`, CA configurations, and database connections.
+
+Currently supported EST operations over CoAP:
+
+| Operation | Status |
+|-----------|--------|
+| `/cacerts` (GET /crts) | Implemented |
+| `/simpleenroll` (POST /sen) | Implemented |
+| `/simplereenroll` (POST /sren) | Implemented |
+| `/csrattrs` (GET /att) | Implemented |
+| `/serverkeygen` (POST /skg) | Not yet implemented over CoAP |
+
 ## Configuration
 
 Enable CoAP in `kipuka.toml` under the `[coap]` section:
@@ -283,6 +302,85 @@ Larger block sizes reduce latency but require higher MTU.
 6. **Validate client certificates** (mTLS mode) or OTP (EST enrollment)
 7. **Use firewall rules** to restrict CoAP port 5684 to authorized subnets
 8. **Enable audit logging** for all enrollment requests
+
+## Deployment Notes
+
+### UDP Port and Firewall
+
+The IANA-assigned port for CoAP over DTLS is **5684**. Ensure your firewall allows inbound UDP on this port:
+
+```bash
+# firewalld (Fedora/RHEL)
+sudo firewall-cmd --permanent --add-port=5684/udp
+sudo firewall-cmd --reload
+
+# iptables
+sudo iptables -A INPUT -p udp --dport 5684 -j ACCEPT
+```
+
+### Container Deployment
+
+When running kipuka in a container, expose both the HTTPS and CoAP/DTLS ports:
+
+```bash
+podman run --rm \
+  -v ./kipuka.toml:/etc/kipuka/kipuka.toml:ro \
+  -v ./certs:/etc/kipuka/certs:ro \
+  -p 9443:9443 \
+  -p 5684:5684/udp \
+  registry.kipuka.dev/kipuka:latest
+```
+
+Note the `/udp` suffix on port 5684 -- without it, only TCP is exposed.
+
+### DTLS Certificate and Key
+
+The CoAP/DTLS listener shares the TLS certificate and private key from the `[tls]` section. No separate certificate configuration is needed:
+
+```toml
+[tls]
+cert_chain = "/etc/kipuka/certs/server-chain.pem"
+private_key = "/etc/kipuka/certs/server-key.pem"
+ca_bundle = "/etc/kipuka/certs/trusted-cas.pem"
+
+[coap]
+enabled = true
+listen_addr = "0.0.0.0:5684"
+dtls_enabled = true
+```
+
+### Full Configuration Example
+
+A minimal configuration enabling both HTTPS and CoAP transports:
+
+```toml
+[server]
+listen_addr = "0.0.0.0:9443"
+
+[tls]
+cert_chain = "/etc/kipuka/certs/server-chain.pem"
+private_key = "/etc/kipuka/certs/server-key.pem"
+ca_bundle = "/etc/kipuka/certs/trusted-cas.pem"
+
+[[ca]]
+id = "iot-ca"
+cert = "/etc/kipuka/certs/iot-ca.pem"
+key = "/etc/kipuka/certs/iot-ca-key.pem"
+chain = "/etc/kipuka/certs/iot-ca-chain.pem"
+validity_days = 365
+
+[database]
+url = "sqlite:///var/lib/kipuka/kipuka.db"
+
+[coap]
+enabled = true
+listen_addr = "0.0.0.0:5684"
+dtls_enabled = true
+block_size = 512
+max_payload = 65536
+session_timeout_secs = 300
+max_sessions = 1024
+```
 
 ## References
 
