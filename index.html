@@ -491,7 +491,7 @@
       <h1 class="hero-name">kipuka</h1>
       <p class="hero-tagline">EST enrollment server</p>
       <p class="hero-desc">
-        A standards-compliant, post-quantum ready certificate enrollment server
+        A standards-compliant certificate enrollment server
         for private networks. Built in Rust.
       </p>
       <div class="hero-ctas">
@@ -514,13 +514,14 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Built for Private Infrastructure</h2>
-        <p class="section-subtitle">Everything you need to run a production EST certificate authority on your own terms.</p>
+        <p class="section-subtitle">Core enrollment, multi-CA failover, HSM key protection, and NIAP audit logging. Active development.</p>
       </div>
       <div class="features">
         <div class="feature-card">
           <h3>RFC 7030 EST</h3>
-          <p>All six EST operations: cacerts, simpleenroll, simplereenroll,
-             fullcmc, serverkeygen, and csrattrs. Plus STAR auto-renewal (RFC 8739).</p>
+          <p>Core EST operations: cacerts, simpleenroll, simplereenroll,
+             and fullcmc. Server keygen and csrattrs are in progress.
+             STAR auto-renewal (RFC 8739) state machine implemented.</p>
         </div>
         <div class="feature-card">
           <h3>Multi-CA &amp; HA</h3>
@@ -533,9 +534,9 @@
              Thales Luna, and Kryoptic for dev/test.</p>
         </div>
         <div class="feature-card">
-          <h3>Post-Quantum Ready</h3>
-          <p>ML-DSA signing (FIPS 204), ML-KEM key encapsulation (FIPS 203),
-             and composite hybrid algorithms via Synta.</p>
+          <h3>Dogtag PKI</h3>
+          <p>REST API client for Red Hat Certificate System. Enrollment
+             via profiles, CMC passthrough, and KRA key recovery.</p>
         </div>
         <div class="feature-card">
           <h3>Multi-Database</h3>
@@ -543,9 +544,10 @@
              One config line to switch. Automatic migrations.</p>
         </div>
         <div class="feature-card">
-          <h3>EAB &amp; Kerberos</h3>
-          <p>mTLS client certificates, one-time passwords with rate limiting,
-             and GSSAPI/Kerberos enterprise SSO integration.</p>
+          <h3>OTP &amp; mTLS Auth</h3>
+          <p>One-time passwords with timing-safe validation and rate limiting.
+             mTLS client certificate authentication for re-enrollment.
+             GSSAPI/Kerberos planned.</p>
         </div>
       </div>
     </div>
@@ -584,22 +586,23 @@
   <!-- Stats Callout -->
   <section class="stats-callout">
     <div class="container">
-      <div class="stats-number">8</div>
-      <p class="stats-label">IETF RFCs and standards implemented</p>
+      <div class="stats-number">6</div>
+      <p class="stats-label">standards implemented &mdash; and counting</p>
       <p class="stats-desc">
-        From RFC 7030 EST to FIPS 204 post-quantum signatures and NIAP CA Protection Profile v2.0.
-        kipuka tracks the standards so you don't have to.
+        Core EST enrollment (RFC 7030), Full CMC (RFC 5272), STAR renewal,
+        and NIAP CA Protection Profile compliance. More in progress.
       </p>
       <ul class="compliance-list">
         <li><strong>RFC 7030</strong> EST</li>
         <li><strong>RFC 8951</strong> Clarifications</li>
         <li><strong>RFC 5272</strong> CMC</li>
         <li><strong>RFC 8739</strong> STAR</li>
-        <li><strong>RFC 7252</strong> CoAP</li>
         <li><strong>CA/B Forum</strong> BR</li>
         <li><strong>NIAP</strong> CA PP v2.0</li>
-        <li><strong>FIPS 140-3</strong> HSM</li>
       </ul>
+      <p style="margin-top:1rem;font-size:0.8rem;color:#484f58;font-family:var(--mono);">
+        Planned: RFC 7252 CoAP &middot; FIPS 140-3 &middot; ML-DSA (FIPS 204) &middot; ML-KEM (FIPS 203)
+      </p>
       <a href="/doc/compliance/rfc-support.html" class="terminal-link" style="margin-top:1.5rem;">View RFC Compliance &rarr;</a>
     </div>
   </section>
