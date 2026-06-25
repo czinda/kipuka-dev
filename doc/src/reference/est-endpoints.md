@@ -322,6 +322,51 @@ Typical attributes returned include:
 
 ---
 
+## GET /star/{order-id}
+
+Fetch the latest certificate in a STAR (Short-Term Automatic Renewal) order.
+STAR orders are created via the `/simpleenroll` endpoint when the client
+includes STAR-specific attributes in the CSR.  Once active, the server
+automatically renews the certificate at the configured interval.
+
+**Authentication:** mTLS required.  The client must present a certificate
+that is authorized to access the STAR order.
+
+**Response:** `200 OK` with Content-Type
+`application/pkcs7-mime; smime-type=certs-only`.  The body contains the
+most recently issued certificate in the STAR renewal series.
+
+### Example
+
+```bash
+# Fetch the latest STAR certificate
+curl --cacert ca-chain.pem \
+  --cert device.crt \
+  --key device.key \
+  -o star-cert.p7b \
+  https://est.example.com:9443/.well-known/est/iot-fleet/star/order-abc123
+
+# Decode the certificate
+base64 -d star-cert.p7b | openssl pkcs7 -inform DER -print_certs -out star.crt
+```
+
+### STAR Order Status
+
+The order lifecycle follows these states:
+
+| State | Description |
+|-------|-------------|
+| `pending` | Order created, awaiting first certificate issuance |
+| `active` | Certificates are being automatically renewed |
+| `expired` | Order lifetime has elapsed; no further renewals |
+| `cancelled` | Order cancelled by operator via Admin API |
+
+> **Note:** STAR support requires `[star] enabled = true` in the server
+> configuration.  See [STAR Certificates](../operator/star.md) for
+> configuration details.
+
+---
+
 ## Error responses
 
 All EST endpoints return standard HTTP error codes.  The response body for

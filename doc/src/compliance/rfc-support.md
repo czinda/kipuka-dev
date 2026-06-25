@@ -75,6 +75,62 @@ TCP connections.
 | `/cacerts` over CoAP | Implemented | Returns the CA certificate chain using block-wise transfer. |
 | `/simpleenroll` over CoAP | Implemented | Enrollment via PKCS#10 CSR over CoAP/DTLS. |
 
+### RFC 4210 / RFC 9810 -- Certificate Management Protocol (CMP)
+
+The CMP endpoint at `/.well-known/cmp` provides a comprehensive certificate
+lifecycle protocol with its own ASN.1 message format, independent of the
+EST transport.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Initialization Request (ir) | Implemented | New certificate enrollment via CMP. |
+| Certification Request (cr) | Implemented | Certificate request from an entity with an existing certificate. |
+| Key Update Request (kur) | Implemented | Certificate renewal / rekeying. |
+| Revocation Request (rr) | Implemented | Certificate revocation via CMP (disabled by default). |
+| MAC-based protection | Implemented | HMAC-SHA256 with shared secret for initial enrollment (RFC 4210 section 5.1.3.1). |
+| Signature-based protection | Implemented | Protection using an existing certificate and private key. |
+| Error handling | Implemented | PKIFailureInfo codes returned in error responses. |
+
+### RFC 8295 -- EST with CMS-Level Security (CMS-EST)
+
+CMS-EST wraps EST messages in CMS `SignedData` and `EnvelopedData`
+structures, providing message-level security independent of the TLS transport.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| CMS SignedData requests | Implemented | All EST requests wrapped in CMS `SignedData` for authentication. |
+| CMS EnvelopedData responses | Implemented | Responses encrypted to the client's certificate using CMS `EnvelopedData`. |
+| Content encryption | Implemented | AES-256-GCM and AES-128-GCM supported.  Configurable via `allowed_content_encryption`. |
+| Air-gapped deployment | Implemented | CMS-EST enables EST enrollment without direct TLS connectivity. |
+
+### RFC 9483 -- EST over CoAP (EST-coaps)
+
+Extends the RFC 7252 CoAP transport entry above with EST-specific path
+mapping and content-format negotiation.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Compressed URI paths | Implemented | `/sen`, `/sren`, `/skg`, `/att`, `/crts` mapped to EST operations per section 5.1. |
+| Content-Format IDs | Implemented | CoAP content-format option values 280-287 per section 5.4. |
+| DTLS 1.2 transport | Implemented | RFC 6347 with PSK and certificate-based authentication. |
+| DTLS 1.3 transport | Implemented | RFC 9147 support. |
+| Block-wise transfer | Implemented | RFC 7959 Block1/Block2 for PQC certificates exceeding single datagram size. |
+
+### RFC 7959 -- Block-Wise Transfers in CoAP
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Block1 (request) | Implemented | Reassembles fragmented CSR uploads. |
+| Block2 (response) | Implemented | Splits certificate responses into negotiated block sizes (16-1024 bytes). |
+| Block size negotiation | Implemented | Server respects client-requested block size within configured limits. |
+
+### Composite Post-Quantum Signatures
+
+| Specification | Status | Notes |
+|---------------|--------|-------|
+| draft-ietf-lamps-pq-composite-sigs-19 | Implemented | Composite ML-DSA + classical algorithm combinations for hybrid migration. |
+| CNSA Suite 2.0 | Tracked | Configuration defaults align with NSA CNSA 2.0 timeline (2025 prefer, 2030 require PQC). |
+
 ## Certificate Policy
 
 ### CA/Browser Forum Baseline Requirements
@@ -149,11 +205,20 @@ encrypts the generated private key for transport to the client.
 |----------|-------|--------|
 | **RFC 7030** | EST protocol | Core implementation -- all six endpoints |
 | **RFC 8951** | EST clarifications | Fully implemented |
+| **RFC 4210 / 9810** | CMP protocol | Initialization, certification, key update, revocation |
 | **RFC 5272** | CMC (Full) | `/fullcmc` endpoint, partial control attributes |
+| **RFC 8295** | CMS-EST | CMS-wrapped EST for air-gapped environments |
 | **RFC 8739** | STAR auto-renewal | Short-lived certificate management |
 | **RFC 7252** | CoAP transport | Constrained device enrollment over DTLS |
+| **RFC 9483** | EST-coaps | EST over CoAP with compressed URI paths |
+| **RFC 7959** | CoAP block transfer | Block1/Block2 for large certificate payloads |
+| **RFC 6960** | OCSP | Client certificate revocation checking |
+| **RFC 6347** | DTLS 1.2 | CoAP transport security |
+| **RFC 9147** | DTLS 1.3 | CoAP transport security (modern) |
 | **CA/B Forum BR** | Certificate profiles, validity | Enforced at CSR validation and signing |
 | **NIAP CA PP v2.0** | Protection Profile | SFR mapping documented |
 | **FIPS 140-3** | Cryptographic modules | Via HSM integration |
 | **FIPS 204** | ML-DSA post-quantum signing | Via Synta / PKCS#11 |
 | **FIPS 203** | ML-KEM post-quantum KEM | Via Synta / PKCS#11 |
+| **Composite PQC** | Hybrid ML-DSA + classical | Migration path to post-quantum |
+| **CNSA Suite 2.0** | NSA algorithm guidance | Timeline tracking for PQC transition |

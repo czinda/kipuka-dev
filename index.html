@@ -514,20 +514,26 @@
     <div class="container">
       <div class="section-header">
         <h2 class="section-title">Built for Private Infrastructure</h2>
-        <p class="section-subtitle">All six EST operations, CMP, multi-CA failover, HSM key protection, and NIAP-compliant audit logging.</p>
+        <p class="section-subtitle">EST, CMP, CMS-EST, STAR, multi-CA failover, HSM key protection, and NIAP-compliant audit logging.</p>
       </div>
       <div class="features">
         <div class="feature-card">
           <h3>RFC 7030 EST</h3>
           <p>All six EST operations: cacerts (PKCS#7), simpleenroll, simplereenroll,
-             fullcmc (RFC 5272), serverkeygen, and csrattrs.
-             STAR auto-renewal (RFC 8739) with integrated renewal loop.</p>
+             fullcmc (RFC 5272 via synta-cmc), serverkeygen with KRA key escrow,
+             and csrattrs. STAR auto-renewal (RFC 8739) with integrated renewal loop.</p>
         </div>
         <div class="feature-card">
           <h3>CMP Protocol</h3>
-          <p>Certificate Management Protocol (RFC 4210) with MAC-based and
-             signature-based protection verification. Initialization, certification,
-             and revocation request handling.</p>
+          <p>Certificate Management Protocol (RFC 4210/9810) at <code>/.well-known/cmp</code>.
+             MAC-based (HMAC-SHA256) and signature-based protection.
+             IR, CR, KUR, and RR request handling.</p>
+        </div>
+        <div class="feature-card">
+          <h3>CMS-EST &amp; STAR</h3>
+          <p>CMS-wrapped EST (RFC 8295) with SignedData/EnvelopedData for
+             air-gapped deployments. STAR short-lived certificates (RFC 8739) for
+             the CA/B Forum 47-day validity mandate.</p>
         </div>
         <div class="feature-card">
           <h3>Multi-CA &amp; HA</h3>
@@ -536,30 +542,38 @@
         </div>
         <div class="feature-card">
           <h3>HSM / PKCS#11</h3>
-          <p>CA private keys loaded from HSMs via PKCS#11. Entrust nShield, Utimaco,
-             Thales Luna, and Kryoptic for dev/test.</p>
+          <p>CA private keys loaded from HSMs via PKCS#11 (cryptoki 0.12).
+             Entrust nShield, Utimaco, Thales Luna, and Kryoptic for dev/test.
+             PQC keygen support planned.</p>
         </div>
         <div class="feature-card">
           <h3>Post-Quantum Ready</h3>
-          <p>ML-DSA signing (FIPS 204) and ML-KEM key encapsulation (FIPS 203)
-             in enrollment and server keygen. Composite hybrid algorithms
-             for migration. Requires OpenSSL 3.5+.</p>
+          <p>ML-DSA signing (FIPS 204) and ML-KEM key encapsulation (FIPS 203).
+             Composite hybrid algorithms (ML-DSA + RSA/ECDSA/Ed25519) for migration.
+             CNSA Suite 2.0 timeline tracking. Requires OpenSSL 3.5+.</p>
         </div>
         <div class="feature-card">
-          <h3>Dogtag PKI</h3>
-          <p>REST API client for Red Hat Certificate System. Enrollment
-             via profiles, CMC passthrough, and KRA server-side key generation.</p>
+          <h3>Dogtag CA &amp; KRA</h3>
+          <p>REST API client for Red Hat Certificate System. Profile-based enrollment,
+             Full CMC passthrough (RFC 5272), KRA server-side key generation
+             with archival, and TPS smart card integration.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Authentication</h3>
+          <p>OTP with timing-safe validation, mTLS with OCSP checking (RFC 6960)
+             and CRL fallback, GSSAPI/Kerberos with libgssapi cryptographic
+             verification or structural parsing, and CMS SignedData RA auth.</p>
+        </div>
+        <div class="feature-card">
+          <h3>CoAP / DTLS</h3>
+          <p>EST-over-CoAP (RFC 9483) for IoT and constrained devices. DTLS 1.2/1.3
+             transport, block-wise transfer (RFC 7959) for PQC certificates,
+             compressed URI paths, and session resumption.</p>
         </div>
         <div class="feature-card">
           <h3>Multi-Database</h3>
           <p>SQLite for single-node, PostgreSQL or MariaDB for scale.
-             One config line to switch. Automatic migrations.</p>
-        </div>
-        <div class="feature-card">
-          <h3>Authentication</h3>
-          <p>OTP with timing-safe validation, mTLS with OCSP revocation checking
-             and stapling, GSSAPI/Kerberos with libgssapi cryptographic verification
-             (compile-time feature flag), and CMS SignedData RA authentication.</p>
+             One config line to switch. Automatic migrations via sqlx.</p>
         </div>
       </div>
     </div>
@@ -598,28 +612,34 @@
   <!-- Stats Callout -->
   <section class="stats-callout">
     <div class="container">
-      <div class="stats-number">11</div>
+      <div class="stats-number">19</div>
       <p class="stats-label">RFCs and standards implemented</p>
       <p class="stats-desc">
-        EST enrollment, CMP certificate management, Full CMC, STAR renewal,
-        OCSP revocation checking, post-quantum ML-DSA/ML-KEM, and NIAP compliance.
+        EST enrollment, CMP certificate management, CMS-EST, Full CMC, STAR renewal,
+        EST-over-CoAP, OCSP revocation checking, post-quantum ML-DSA/ML-KEM with
+        composite hybrids, and NIAP compliance.
       </p>
       <ul class="compliance-list">
         <li><strong>RFC 7030</strong> EST</li>
         <li><strong>RFC 4210</strong> CMP</li>
+        <li><strong>RFC 8295</strong> CMS-EST</li>
         <li><strong>RFC 8951</strong> Clarifications</li>
         <li><strong>RFC 5272</strong> CMC</li>
         <li><strong>RFC 8739</strong> STAR</li>
+        <li><strong>RFC 9483</strong> EST-coaps</li>
+        <li><strong>RFC 7252</strong> CoAP</li>
+        <li><strong>RFC 7959</strong> Block Transfer</li>
         <li><strong>RFC 6960</strong> OCSP</li>
+        <li><strong>RFC 6347</strong> DTLS 1.2</li>
+        <li><strong>RFC 9147</strong> DTLS 1.3</li>
         <li><strong>FIPS 204</strong> ML-DSA</li>
         <li><strong>FIPS 203</strong> ML-KEM</li>
+        <li><strong>Composite</strong> ML-DSA Hybrids</li>
         <li><strong>CA/B Forum</strong> BR</li>
         <li><strong>NIAP</strong> CA PP v2.0</li>
         <li><strong>FIPS 140-3</strong> via HSM</li>
+        <li><strong>CNSA 2.0</strong> PQC Timeline</li>
       </ul>
-      <p style="margin-top:1rem;font-size:0.8rem;color:#484f58;font-family:var(--mono);">
-        Planned: RFC 7252 CoAP &middot; Composite ML-DSA hybrids
-      </p>
       <a href="/doc/compliance/rfc-support.html" class="terminal-link" style="margin-top:1.5rem;">View RFC Compliance &rarr;</a>
     </div>
   </section>

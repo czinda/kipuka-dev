@@ -262,6 +262,37 @@ pki kra-key-recover --keyID <key_id> --output recovered-key.p12
 
 This operation requires dual approval from KRA agents (depending on KRA policy).
 
+### Supported Key Algorithms
+
+The KRA supports server-side generation of the following key types:
+
+| Algorithm | KRA Parameter | Notes |
+|-----------|--------------|-------|
+| RSA 2048 | `rsa:2048` | Minimum for CA/B Forum BR compliance |
+| RSA 3072 | `rsa:3072` | Recommended for new deployments |
+| RSA 4096 | `rsa:4096` | Maximum RSA key size |
+| ECDSA P-256 | `ec:secp256r1` | NIST P-256 curve |
+| ECDSA P-384 | `ec:secp384r1` | NIST P-384 curve |
+| ML-KEM-768 | `ml-kem:768` | Post-quantum key encapsulation (requires Dogtag 11.6+) |
+
+The key algorithm is determined by the Dogtag certificate profile. When the EST client's CSR specifies a key algorithm via the `csrattrs` response, kipuka maps it to the appropriate KRA parameter.
+
+### CMC Passthrough Details
+
+When Full CMC passthrough is enabled (`est.fullcmc = true`), kipuka acts as a transparent CMC gateway between EST clients and Dogtag. The CMC message format is preserved end-to-end:
+
+1. **Request path:** Client -> EST `/fullcmc` -> kipuka -> Dogtag `/ca/rest/certrequests/cmc`
+2. **Response path:** Dogtag CMC response -> kipuka -> EST client
+
+kipuka validates the outer CMS `SignedData` wrapper but does not modify the inner CMC `PKIData` payload. This enables:
+
+- **Batch enrollment:** Multiple certificate requests in a single CMC transaction
+- **Key recovery:** CMC-wrapped key recovery requests forwarded to KRA
+- **Revocation:** CMC revocation requests processed by Dogtag's RA
+- **TPS integration:** Token Processing System operations over EST transport
+
+The `synta-cmc` crate handles CMC message parsing and construction, providing full RFC 5272/5273/5274 compliance.
+
 ## Multi-CA Pool with Circuit Breaker
 
 Multiple Dogtag instances can be configured as separate CA entries to provide high availability and load distribution.

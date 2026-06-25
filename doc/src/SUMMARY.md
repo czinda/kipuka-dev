@@ -21,6 +21,11 @@
 - [Audit Logging](./operator/audit.md)
 - [Admin API](./operator/admin-api.md)
 - [Dogtag PKI Integration](./operator/dogtag.md)
+- [CMP Protocol](./operator/cmp.md)
+- [CMS-EST Endpoints](./operator/cms-est.md)
+- [STAR Certificates](./operator/star.md)
+- [OCSP Configuration](./operator/ocsp.md)
+- [CoAP Transport](./operator/coap.md)
 
 # Compliance
 
@@ -28,12 +33,15 @@
 - [NIAP CA Protection Profile](./compliance/niap.md)
 - [CA/B Forum Baseline Requirements](./compliance/cab-forum.md)
 - [HSM Compatibility Matrix](./compliance/hsm-compatibility.md)
+- [Post-Quantum Readiness](./compliance/pqc.md)
 
 # API Reference
 
 - [EST Endpoints](./reference/est-endpoints.md)
 - [Admin API Reference](./reference/admin-api.md)
 - [Rust API Reference](./reference/rust-api.md)
+- [CMP Endpoints](./reference/cmp-endpoints.md)
+- [CMS-EST Endpoints](./reference/cms-est-endpoints.md)
 
 # Developer Guide
 

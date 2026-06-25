@@ -245,6 +245,64 @@ The server:
 4. Maps the principal to a certificate subject DN using the configured mapping rules
 5. Issues a certificate with the mapped subject
 
+#### Authentication Modes
+
+kipuka supports two GSSAPI authentication modes controlled by the `require_crypto_verification` setting:
+
+**Cryptographic Verification (default, recommended)**
+
+When `require_crypto_verification = true` (the default), kipuka uses `libgssapi` to perform full cryptographic verification of Kerberos tickets. This requires:
+
+- A valid keytab file or gssproxy configuration
+- The `gssapi` compile-time feature flag enabled
+- Network connectivity to the KDC for ticket validation
+
+```toml
+[gssapi]
+enabled = true
+keytab = "/etc/kipuka/kipuka.keytab"
+service_principal = "HTTP/est.example.com@EXAMPLE.COM"
+require_crypto_verification = true
+```
+
+**Structural Parsing Mode (development only)**
+
+When `require_crypto_verification = false`, kipuka performs structural parsing of the SPNEGO token without cryptographic verification. The service name (sname) is extracted from the cleartext portion of the ticket, but:
+
+- No cryptographic verification is performed
+- The client identity **cannot** be authenticated
+- This mode is **not suitable for production**
+
+This mode is intended only for development, logging, or environments where TLS client certificates provide the primary authentication and GSSAPI is used only for identity hint extraction.
+
+```toml
+[gssapi]
+enabled = true
+require_crypto_verification = false  # WARNING: development only
+```
+
+> **Security Warning:** Never set `require_crypto_verification = false` in production. Without cryptographic verification, any client can forge a SPNEGO token with an arbitrary principal name.
+
+#### Credential Management
+
+kipuka supports two mutually exclusive credential management strategies:
+
+**Keytab file** (traditional):
+
+```toml
+[gssapi]
+keytab = "/etc/kipuka/kipuka.keytab"
+```
+
+**gssproxy** (recommended for containerized deployments):
+
+```toml
+[gssapi]
+gssproxy = true  # Uses gssproxy socket instead of keytab
+```
+
+gssproxy separates credential management from the application, allowing kipuka to run without direct access to the keytab file. This is particularly useful in container environments where mounting keytab files is operationally complex.
+
 #### Principal Mapping
 
 The `principal_mapping` table defines explicit mappings from Kerberos principals to certificate subject DNs. If no explicit mapping exists, the `default_template` is used (if configured).
