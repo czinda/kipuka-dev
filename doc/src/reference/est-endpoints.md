@@ -498,3 +498,77 @@ For mTLS-authenticated endpoints, the server's TLS configuration must include a
 # Verify server TLS configuration
 openssl s_client -connect est.example.com:9443 -showcerts </dev/null
 ```
+
+---
+
+## GET /renewal-info/:cert_id
+
+**Draft:** [draft-ietf-lamps-est-renewal-info](https://datatracker.ietf.org/doc/draft-ietf-lamps-est-renewal-info/)
+
+Returns a JSON object with a suggested renewal window for the identified certificate.
+No authentication required.
+
+### Certificate ID construction
+
+```
+cert_id = base64url(AKI.keyIdentifier) + "." + base64url(Serial)
+```
+
+- **AKI keyIdentifier**: From the certificate's Authority Key Identifier extension, base64url-encoded (no padding)
+- **Serial**: The certificate serial number DER value bytes, base64url-encoded (no padding)
+
+### Response
+
+```json
+{
+  "suggestedWindow": {
+    "start": "2026-07-20T00:00:00Z",
+    "end": "2026-07-24T00:00:00Z"
+  }
+}
+```
+
+| Header | Value |
+|--------|-------|
+| Content-Type | `application/json` |
+| Retry-After | `86400` (configurable) |
+
+### Configuration
+
+```toml
+[est]
+renewal_window_days = 30          # Days before expiry to start window
+renewal_retry_after_secs = 86400  # Retry-After header value
+```
+
+### Error responses
+
+| Status | Reason |
+|--------|--------|
+| 400 | Malformed cert_id (bad base64url, missing dot separator) |
+| 404 | Certificate not found or AKI mismatch |
+
+---
+
+## CSR Attributes Template (RFC 9908)
+
+When `[est.csr_template]` is configured, the `/csrattrs` response includes a
+`CertificationRequestInfoTemplate` attribute alongside the standard OID list.
+
+This is backward compatible — clients that don't understand the template
+ignore it and process only the OIDs.
+
+### Configuration
+
+```toml
+[est.csr_template]
+key_algorithm = "ec:P-256"
+required_extensions = ["2.5.29.17"]  # subjectAltName
+
+[[est.csr_template.subject]]
+oid = "2.5.4.10"
+value = "Example Corp"    # pre-filled by server
+
+[[est.csr_template.subject]]
+oid = "2.5.4.3"           # client must provide CN
+```

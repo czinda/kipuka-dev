@@ -222,3 +222,5 @@ encrypts the generated private key for transport to the client.
 | **FIPS 203** | ML-KEM post-quantum KEM | Via Synta / PKCS#11 |
 | **Composite PQC** | Hybrid ML-DSA + classical | Migration path to post-quantum |
 | **CNSA Suite 2.0** | NSA algorithm guidance | Timeline tracking for PQC transition |
+| **RFC 9908** | CSR Attributes Clarification | Server-templated CSR subjects + key constraints |
+| **draft-est-renewal-info** | EST Renewal Information | Suggested renewal window scheduling |
