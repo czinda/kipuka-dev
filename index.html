@@ -689,25 +689,25 @@
         <h2 class="section-title">Architecture</h2>
         <p class="section-subtitle">A Cargo workspace with six internal crates and zero external CA dependencies.</p>
       </div>
-      <div class="arch-diagram"><span class="dim">                       Clients</span>
-<span class="dim">                    /            \</span>
-<span class="dim">             TLS + mTLS/OTP       CoAP/DTLS</span>
-<span class="dim">                  |                   |</span>
-           +------<span class="hl">+</span>------+     <span class="hl">kipuka-coap</span>
-           | <span class="hl">kipuka-est</span>  |     CoAP/DTLS
-           |  axum HTTP  |     (RFC 9483)
-           +--<span class="hl">+</span>---<span class="hl">+</span>--<span class="hl">+</span>--+---------+
-              |   |  |              |
-    +---------+   |  +----------+  |
-    |             |             |  |
-<span class="hl">kipuka-otp</span>   <span class="hl">kipuka-hsm</span>     <span class="hl">kipuka-util</span>
+      <div class="arch-diagram"><span class="dim">                  Clients</span>
+<span class="dim">               /            \</span>
+<span class="dim">        TLS + mTLS/OTP        CoAP/DTLS</span>
+<span class="dim">             |                    |</span>
+        +------<span class="hl">+</span>------+      <span class="hl">kipuka-coap</span>
+        | <span class="hl">kipuka-est</span>  |      CoAP/DTLS
+        |  axum HTTP  |      (RFC 9483)
+        +--<span class="hl">+</span>---<span class="hl">+</span>--<span class="hl">+</span>--+----------+
+           |   |  |               |
+ +---------+   |  +-----------+  |
+ |             |              |  |
+<span class="hl">kipuka-otp</span>  <span class="hl">kipuka-hsm</span>      <span class="hl">kipuka-util</span>
 OTP lifecycle PKCS#11        shared types
-              HSM ops           &amp; config
-    |             |
-    |        <span class="hl">kipuka-dogtag</span>
-    |         Dogtag PKI
-    |         REST client
-    |
+             HSM ops            &amp; config
+ |             |
+ |        <span class="hl">kipuka-dogtag</span>
+ |         Dogtag PKI
+ |         REST client
+ |
 +---+-----+
 |  <span class="hl">sqlx</span>   |
 | sqlite  |
