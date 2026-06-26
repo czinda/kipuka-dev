@@ -371,15 +371,17 @@
       background: var(--bg-code);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 1.5rem;
+      padding: 2rem 3rem;
       overflow-x: auto;
       font-family: var(--mono);
-      font-size: 0.8rem;
-      line-height: 1.6;
+      font-size: 0.85rem;
+      line-height: 1.7;
       color: #8b949e;
       white-space: pre;
-      max-width: 720px;
+      width: fit-content;
+      max-width: min(720px, 100%);
       margin: 0 auto;
+      box-sizing: border-box;
     }
 
     .arch-diagram .hl { color: var(--accent); }
