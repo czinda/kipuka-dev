@@ -224,3 +224,77 @@ encrypts the generated private key for transport to the client.
 | **CNSA Suite 2.0** | NSA algorithm guidance | Timeline tracking for PQC transition |
 | **RFC 9908** | CSR Attributes Clarification | Server-templated CSR subjects + key constraints |
 | **draft-est-renewal-info** | EST Renewal Information | Suggested renewal window scheduling |
+
+## RFC 9908 -- CSR Attributes Template
+
+The `/csrattrs` endpoint supports the RFC 9908 `CertificationRequestInfoTemplate`
+attribute alongside the traditional OID-list mode (backward compatible).
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| `id-aa-certificationRequestInfoTemplate` OID (1.2.840.113549.1.9.16.2.61) | Implemented | Attribute wraps the template in `CsrAttrs` SEQUENCE |
+| Subject NameTemplate with optional values | Implemented | `SingleAttributeTemplate` — absent value means client supplies |
+| SubjectPublicKeyInfoTemplate `[0] IMPLICIT` | Implemented | AlgorithmIdentifier with EC curve or RSA NULL params |
+| Mandatory `[1]` attributes field | Implemented | Always emitted, even as empty SET (`A1 00`) per ASN.1 spec |
+| `id-aa-extensionReqTemplate` OID (1.2.840.113549.1.9.16.2.62) | Implemented | Extension OIDs with absent values for client-filled extensions |
+| Per-label template variation | Implemented | Different labels can advertise different template constraints |
+| Backward compatibility (§4) | Implemented | OID-list entries coexist with template Attribute in same SEQUENCE |
+
+### Configuration
+
+```toml
+[est.csr_template]
+key_algorithm = "ec:P-256"
+required_extensions = ["2.5.29.17"]
+
+[[est.csr_template.subject]]
+oid = "2.5.4.10"
+value = "Example Corp"
+
+[[est.csr_template.subject]]
+oid = "2.5.4.3"
+# No value — client must supply commonName
+```
+
+## draft-ietf-lamps-est-renewal-info -- EST Renewal Information
+
+The `GET /.well-known/est/renewal-info/{cert_id}` endpoint returns a JSON
+object with a suggested renewal window for the identified certificate.
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| cert_id format (`base64url(AKI).base64url(serial)`) | Implemented | URL-safe alphabet without padding |
+| `suggestedWindow` JSON response | Implemented | ISO 8601 `start` and `end` timestamps |
+| `Retry-After` header | Implemented | Configurable interval |
+| AKI mismatch rejection | Implemented | Returns 404 if AKI doesn't match any known CA |
+| cert_id length validation | Implemented | Rejects >256 characters (400) |
+
+---
+
+## Conformance Test Suite
+
+kipuka ships a wire-format conformance test suite in `contrib/conformance/`
+that validates protocol compliance beyond HTTP status codes.  Each suite
+uses `openssl asn1parse`, `openssl pkcs7`, `openssl x509`, and `xxd` for
+DER-level assertion.
+
+```bash
+./contrib/conformance/run-all.sh           # against running server
+./contrib/conformance/run-all.sh --deploy  # full lifecycle
+```
+
+| Suite | RFC | Assertions | Status |
+|-------|-----|-----------|--------|
+| `rfc7030-est` | RFC 7030 | 31 | PKCS#7 structure, cert chain, Content-Type, WWW-Authenticate |
+| `rfc9908-csrattrs` | RFC 9908 | 19 | Template OID, version, NameTemplate, SPKI, mandatory [1] |
+| `auth-otp` | — | 12 | OTP lifecycle, consumption, revocation, reuse rejection |
+| `auth-mtls` | RFC 7030 §4.2.2 | 6 | mTLS re-enrollment, subject matching |
+| `admin-api` | — | 15 | Health, CAs, certs, auth boundary |
+| `tls-compliance` | RFC 7030 §3.3 | 7 | TLS 1.2+, AEAD ciphers, chain verification |
+| `est-renewal-info` | draft | 9 | cert_id, JSON schema, Retry-After, error cases |
+| `rfc8739-star` | RFC 8739 | 8 | Order lifecycle (skips if manager not initialized) |
+| `rfc8295-cms-est` | RFC 8295 | 6 | Endpoint reachability, Content-Type handling |
+| `rfc4210-cmp` | RFC 4210 | 5 | Endpoint, Content-Type, error responses |
+| `rfc9483-coap` | RFC 9483 | 11 | 69 cargo tests + URI routing + content-format IDs |
+| `audit-niap` | NIAP CA PP | 8 | Audit event source verification |
+| **Total** | | **129** | |

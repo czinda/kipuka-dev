@@ -573,6 +573,18 @@
              compressed URI paths, and session resumption.</p>
         </div>
         <div class="feature-card">
+          <h3>CSR Templates</h3>
+          <p>RFC 9908 <code>CertificationRequestInfoTemplate</code> in <code>/csrattrs</code>.
+             Server-specified subject DN, key algorithm (EC/RSA), and required
+             extensions. Absent-value RDNs for client-supplied fields.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Renewal Scheduling</h3>
+          <p>EST Renewal Info endpoint at <code>/renewal-info/{cert_id}</code>.
+             Returns a suggested renewal window (<code>suggestedWindow.start/end</code>)
+             so clients renew before expiry without polling.</p>
+        </div>
+        <div class="feature-card">
           <h3>Multi-Database</h3>
           <p>SQLite for single-node, PostgreSQL or MariaDB for scale.
              One config line to switch. Automatic migrations via sqlx.</p>
@@ -615,12 +627,14 @@
   <!-- Stats Callout -->
   <section class="stats-callout">
     <div class="container">
-      <div class="stats-number">23</div>
-      <p class="stats-label">RFCs and standards implemented — 196 tests</p>
+      <div class="stats-number">25</div>
+      <p class="stats-label">RFCs and standards implemented — 129 conformance assertions across 12 suites</p>
       <p class="stats-desc">
         EST enrollment with renewal scheduling, CMP certificate management, CMS-EST,
         Full CMC, STAR renewal, EST-over-CoAP, OCSP revocation checking, CSR attribute
-        templates, post-quantum ML-DSA/ML-KEM with composite hybrids, and NIAP compliance.
+        templates (RFC 9908), EST renewal info, post-quantum ML-DSA/ML-KEM with
+        composite hybrids, and NIAP compliance. Every protocol claim validated by
+        wire-format conformance tests.
       </p>
       <ul class="compliance-list">
         <li><strong>RFC 7030</strong> EST</li>
@@ -642,6 +656,8 @@
         <li><strong>NIAP</strong> CA PP v2.0</li>
         <li><strong>FIPS 140-3</strong> via HSM</li>
         <li><strong>CNSA 2.0</strong> PQC Timeline</li>
+        <li><strong>RFC 9908</strong> CSR Template</li>
+        <li><strong>draft</strong> Renewal Info</li>
       </ul>
       <a href="/doc/compliance/rfc-support.html" class="terminal-link" style="margin-top:1.5rem;">View RFC Compliance &rarr;</a>
     </div>
