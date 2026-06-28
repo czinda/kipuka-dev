@@ -320,6 +320,10 @@ Typical attributes returned include:
 - **challengePassword** -- when the server requires a challenge in the CSR
 - **Extension requests** -- specific X.509v3 extensions the server will honor
 
+When `[est.csr_template]` is configured, the response also includes an
+RFC 9908 `CertificationRequestInfoTemplate`.  See
+[CSR Attributes Template](#csr-attributes-template-rfc-9908) below.
+
 ---
 
 ## GET /star/{order-id}
@@ -541,6 +545,20 @@ renewal_window_days = 30          # Days before expiry to start window
 renewal_retry_after_secs = 86400  # Retry-After header value
 ```
 
+### Example
+
+```bash
+# Build cert_id: base64url(AKI) + "." + base64url(Serial)
+AKI=$(openssl x509 -in client.pem -noout -text \
+  | grep -A1 'Authority Key Identifier' | tail -1 \
+  | tr -d ': ' | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=')
+SER=$(openssl x509 -in client.pem -noout -serial \
+  | cut -d= -f2 | xxd -r -p | base64 | tr '+/' '-_' | tr -d '=')
+
+curl --cacert ca-chain.pem \
+  https://est.example.com:9443/.well-known/est/renewal-info/${AKI}.${SER}
+```
+
 ### Error responses
 
 | Status | Reason |
@@ -557,6 +575,15 @@ When `[est.csr_template]` is configured, the `/csrattrs` response includes a
 
 This is backward compatible — clients that don't understand the template
 ignore it and process only the OIDs.
+
+### Example
+
+```bash
+# Fetch csrattrs with template and inspect the ASN.1 structure
+curl --cacert ca-chain.pem \
+  https://est.example.com:9443/.well-known/est/csrattrs \
+  | base64 -d | openssl asn1parse -inform DER
+```
 
 ### Configuration
 
