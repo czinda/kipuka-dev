@@ -32,6 +32,7 @@
 - [RFC Support Reference](./compliance/rfc-support.md)
 - [NIAP CA Protection Profile](./compliance/niap.md)
 - [CA/B Forum Baseline Requirements](./compliance/cab-forum.md)
+- [Public Trust Roadmap](./compliance/public-trust-roadmap.md)
 - [HSM Compatibility Matrix](./compliance/hsm-compatibility.md)
 - [Post-Quantum Readiness](./compliance/pqc.md)
 
