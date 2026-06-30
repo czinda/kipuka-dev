@@ -1,0 +1,14 @@
+pages:
+  image: peaceiris/mdbook:v0.4.40
+  script:
+    - cd doc && mdbook build
+    - cd ..
+    - mkdir -p public/doc
+    - cp -r doc-build/* public/doc/
+    - cp index.html public/
+    - cp -r favicon.svg public/ 2>/dev/null || true
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
