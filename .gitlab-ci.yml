@@ -1,8 +1,9 @@
 pages:
-  image: peaceiris/mdbook:v0.4.40
+  image: rust:1.88-bookworm
+  before_script:
+    - cargo install mdbook --version 0.4.40 --locked 2>/dev/null || true
   script:
-    - cd doc && mdbook build
-    - cd ..
+    - cd doc && mdbook build && cd ..
     - mkdir -p public/doc
     - cp -r doc-build/* public/doc/
     - cp index.html public/
@@ -10,5 +11,9 @@ pages:
   artifacts:
     paths:
       - public
+  cache:
+    key: mdbook
+    paths:
+      - /usr/local/cargo/bin/mdbook
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
