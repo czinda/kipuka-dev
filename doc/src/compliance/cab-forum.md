@@ -18,37 +18,44 @@ The following table maps each BR area to the specific software component
 that owns it.  When deploying under a publicly-trusted root, all
 affected components must be configured correctly.
 
-| BR Area | Component | Crate / Subsystem | Status | Notes |
-|---------|-----------|-------------------|--------|-------|
-| CSR validation (key size, SAN, extensions) | kipuka | `kipuka-est` | Enforced | Profile enforcement at enrollment |
-| RSA exponent / key quality checks | kipuka | `kipuka-est` + `synta` | Not Implemented | §6.1.6 quality checks |
-| Weak key rejection (Debian/ROCA/Fermat) | kipuka | `kipuka-est` | Not Implemented | Blocklist checks needed |
-| Serial number generation | kipuka | `kipuka-est` (+ `kipuka-hsm`) | Enforced | 160-bit CSPRNG |
-| Certificate construction (extensions, profile) | kipuka | `synta` | Enforced | AKI, SKI, BC, KU, EKU, SAN |
-| AIA / CDP injection | kipuka | `synta` | Not Implemented | Should be added to cert construction |
-| Certificate Policies (Reserved OIDs) | kipuka | `synta` | Partial | Operator-configured, no OID enforcement |
-| Validity period clamping | kipuka | `kipuka-est` | Enforced | Declining timeline tracked |
-| `notBefore` 48-hour enforcement | kipuka | `kipuka-est` | Not Enforced | Should validate at signing time |
-| SHA-1 signing rejection | kipuka | `kipuka-est` | Not Enforced | Should reject SHA-1 algorithm requests |
-| `organizationalUnitName` prohibition | kipuka | `kipuka-est` | Not Implemented | Should strip/reject OU |
-| Server-side key generation + transport | kipuka | `kipuka-est` + `synta` | Enforced | PKCS#7 EnvelopedData |
-| OTP authentication | kipuka | `kipuka-otp` | Enforced | Enrollment authentication |
-| HSM key operations | kipuka | `kipuka-hsm` | Enforced | PKCS#11 signing + serial generation |
-| CoAP/DTLS transport | kipuka | `kipuka-coap` | Enforced | Shares EST enrollment logic |
-| Audit logging (enrollment events) | kipuka | `kipuka-est` | Enforced | `EnrollReject`, `EnrollSuccess` |
-| Certificate linting (pre-sign) | kipuka | `kipuka-est` | Not Implemented | zlint/certlint integration |
-| Dogtag CA REST integration | kipuka | `kipuka-dogtag` | Enforced | Profile-based issuance delegation |
-| Domain validation (DCV) | Dogtag | `base/acme` | CA Responsibility | HTTP-01 / DNS-01 |
-| CAA record processing | Dogtag | `base/ca` | Not Implemented | RFC 8659 -- no code exists |
-| DNSSEC validation of CAA | Dogtag | `base/ca` | Not Implemented | Must validate to IANA root |
-| Multi-Perspective Issuance Corroboration | Dogtag | `base/acme` | Not Implemented | Requires MPIC infrastructure |
-| Certificate Transparency (SCT) | Dogtag | `base/ca` (`CTEngine`) | Available | Precert + SCT embedding |
-| Certificate linting (post-sign) | Dogtag | `base/ca` | Not Implemented | Pre-signing lint of tbsCertificate |
-| OCSP responder | Dogtag | `base/ocsp` | Available | Standalone or CA-embedded |
-| CRL generation and publishing | Dogtag | `base/ca` (`CRLIssuingPoint`) | Available | Auto-update configurable |
-| Revocation processing | Dogtag | `base/ca` (`ServiceRevoke`) | Available | With CRLReason codes |
-| Key archival / escrow | Dogtag | `base/kra` | Available | KRA subsystem |
-| Signed audit logging | Dogtag | `base/server` (`SignedAuditLogger`) | Available | 56+ event types |
+### kipuka (RA) Responsibilities
+
+| BR Area | Crate | Status |
+|---------|-------|--------|
+| CSR validation (key size, SAN, extensions) | `kipuka-est` | Enforced |
+| RSA exponent / key quality checks (§6.1.6) | `kipuka-est`, `synta` | Not Implemented |
+| Weak key rejection (§6.1.1.3) | `kipuka-est` | Not Implemented |
+| Serial number generation | `kipuka-est`, `kipuka-hsm` | Enforced |
+| Certificate construction (AKI, SKI, BC, KU, EKU, SAN) | `synta` | Enforced |
+| AIA / CDP injection | `synta` | Not Implemented |
+| Certificate Policies (Reserved OIDs) | `synta` | Partial |
+| Validity period clamping | `kipuka-est` | Enforced |
+| `notBefore` 48-hour enforcement | `kipuka-est` | Not Enforced |
+| SHA-1 signing rejection | `kipuka-est` | Not Enforced |
+| `organizationalUnitName` prohibition | `kipuka-est` | Not Implemented |
+| Server-side key generation | `kipuka-est`, `synta` | Enforced |
+| OTP authentication | `kipuka-otp` | Enforced |
+| HSM key operations | `kipuka-hsm` | Enforced |
+| CoAP/DTLS transport | `kipuka-coap` | Enforced |
+| Audit logging (enrollment) | `kipuka-est` | Enforced |
+| Certificate linting (pre-sign) | `kipuka-est` | Not Implemented |
+| Dogtag CA integration | `kipuka-dogtag` | Enforced |
+
+### Issuing CA (Dogtag PKI) Responsibilities
+
+| BR Area | Subsystem | Status |
+|---------|-----------|--------|
+| Domain validation (DCV) | `base/acme` | Available |
+| CAA record processing (§4.2.2.1) | `base/ca` | Not Implemented |
+| DNSSEC validation of CAA | `base/ca` | Not Implemented |
+| Multi-Perspective Issuance (§3.2.2.9) | `base/acme` | Not Implemented |
+| Certificate Transparency (SCT) | `base/ca` (`CTEngine`) | Available |
+| Certificate linting (post-sign) | `base/ca` | Not Implemented |
+| OCSP responder | `base/ocsp` | Available |
+| CRL generation and publishing | `base/ca` | Available |
+| Revocation processing | `base/ca` | Available |
+| Key archival / escrow | `base/kra` | Available |
+| Signed audit logging | `base/server` | Available |
 
 ## Certificate Profile Enforcement
 
@@ -58,23 +65,23 @@ rejected with an `EnrollReject` audit event and an HTTP 400 response.
 
 ### Subject Fields
 
-| Field | BR Requirement | kipuka Enforcement | Status |
-|-------|---------------|-------------------|--------|
-| `commonName` | Must match a SAN value if present (§7.1.4.3) | Validated at CSR parsing; rejected if CN does not appear in SAN | Enforced |
-| `organizationName` | Must be verified if included (§3.2.2.2) | kipuka does not verify organizational identity; operators can restrict via `est.label.subject_pattern` | CA Responsibility |
-| `organizationalUnitName` | MUST NOT be included in subscriber certs (§7.1.2.10.2) | Not enforced -- kipuka does not strip or reject OU | Not Implemented |
-| `serialNumber` | Must be unique within the CA | Not included by default | N/A |
-| `countryName` | Two-letter ISO 3166 code if present (§3.2.2.3) | Format-validated at CSR parsing | Enforced |
+| Field | BR Section | kipuka Behavior | Status |
+|-------|----------|----------------|--------|
+| `commonName` | §7.1.4.3 | Rejected if CN not in SAN | Enforced |
+| `organizationName` | §3.2.2.2 | Not verified; use `subject_pattern` to restrict | CA Responsibility |
+| `organizationalUnitName` | §7.1.2.10.2 | Not stripped or rejected | Not Implemented |
+| `serialNumber` | -- | Not included by default | N/A |
+| `countryName` | §3.2.2.3 | ISO 3166 format-validated | Enforced |
 
 ### Key Type and Size Requirements (§6.1.5)
 
-| Key Type | Minimum Size | kipuka Enforcement | Status |
-|----------|-------------|-------------------|--------|
-| RSA | 2048 bits | Rejected if < 2048 | Enforced |
-| RSA | 3072 bits (recommended) | Configurable via `est.label.allowed_key_types` | Configurable |
-| ECDSA P-256 | 256 bits | Accepted | Enforced |
-| ECDSA P-384 | 384 bits | Accepted | Enforced |
-| ECDSA P-521 | 521 bits | Accepted but not recommended by BR | Enforced |
+| Key Type | Minimum | Status |
+|----------|---------|--------|
+| RSA | 2048 bits | Enforced (rejected if smaller) |
+| RSA | 3072 bits | Configurable via `allowed_key_types` |
+| ECDSA P-256 | 256 bits | Enforced |
+| ECDSA P-384 | 384 bits | Enforced |
+| ECDSA P-521 | 521 bits | Enforced (not recommended by BR) |
 
 To restrict a label to specific key types:
 
@@ -126,17 +133,17 @@ zero to ensure a positive ASN.1 INTEGER encoding (per RFC 5280 §4.1.2.2).
 
 ### Mandatory Extensions (§7.1.2.7.6)
 
-| Extension | OID | BR Presence | Critical | kipuka Behavior | Status |
-|-----------|-----|------------|----------|----------------|--------|
-| Authority Key Identifier | 2.5.29.35 | MUST | N | Injected using SHA-1 hash of CA public key | Enforced |
-| Subject Key Identifier | 2.5.29.14 | NOT RECOMMENDED | N | Injected using SHA-1 hash of EE public key | Enforced |
-| Basic Constraints | 2.5.29.19 | MAY | Y | `CA:FALSE`, `pathLenConstraint` absent | Enforced |
-| Key Usage | 2.5.29.15 | SHOULD | Y | Set from `ca.default_key_usage` | Enforced |
-| Extended Key Usage | 2.5.29.37 | MUST | N | `serverAuth` MUST, `clientAuth` MAY | Enforced |
-| Subject Alternative Name | 2.5.29.17 | MUST | * | Required by default (`est.label.require_san = true`) | Enforced |
-| Authority Information Access | 2.5.29.35.1 | MUST | N | Not injected by kipuka; CA profile responsibility | Not Implemented |
-| Certificate Policies | 2.5.29.32 | MUST | N | Operator-configured via label profile | Partial |
-| CRL Distribution Points | 2.5.29.31 | * | N | Not injected by kipuka; CA profile responsibility | Not Implemented |
+| Extension | Critical | kipuka Behavior | Status |
+|-----------|:--------:|----------------|--------|
+| Authority Key Identifier | N | SHA-1 hash of CA public key | Enforced |
+| Subject Key Identifier | N | SHA-1 hash of EE public key | Enforced |
+| Basic Constraints | Y | `CA:FALSE`, no `pathLen` | Enforced |
+| Key Usage | Y | From `ca.default_key_usage` | Enforced |
+| Extended Key Usage | N | `serverAuth` + `clientAuth` | Enforced |
+| Subject Alternative Name | * | Required (`require_san = true`) | Enforced |
+| Authority Info Access | N | CA profile responsibility | Not Implemented |
+| Certificate Policies | N | Operator-configured | Partial |
+| CRL Distribution Points | N | CA profile responsibility | Not Implemented |
 
 **Notes:**
 
@@ -428,58 +435,65 @@ form.  U-label (Unicode) forms are rejected at CSR validation.
 Operators deploying kipuka under a publicly-trusted root should track
 these upcoming BR deadlines:
 
-| Date | Section | Requirement | Affected Component |
-|------|---------|------------|-------------------|
-| **Already effective** | §4.2.2.1.3 | DNSSEC validation on CAA queries | Dogtag `base/ca` |
-| **Already effective** | §3.2.2.9 | MPIC with 4 remote perspectives | Dogtag `base/acme` |
-| **Already effective** | §4.3.1.2 | Certificate linting before signing | `kipuka-est` + Dogtag `base/ca` |
-| **Already effective** | §4.9.9 | OCSP available within 15 minutes | Dogtag `base/ocsp` |
-| **Already effective** | §6.3.2 | Max validity 200 days | `kipuka-est` |
-| 2026-07-15 | §5.4.1 | Verification logs must include specific information | `kipuka-est` + Dogtag `base/server` |
-| 2026-09-15 | §7.1.3.2.1 | SHA-1 sunset in certificates and CRLs | `kipuka-est` + `synta` + Dogtag `base/ca` |
-| 2026-12-15 | §3.2.2.9 | MPIC with 5 remote perspectives, 2 RIR regions | Dogtag `base/acme` |
-| 2027-03-15 | §4.2.2.1.2 | MUST process `accounturi` and `validationmethods` | Dogtag `base/ca` |
-| 2027-03-15 | §3.2.2.4 | Sunset DCV methods §3.2.2.4.16+, §3.2.2.5.3 | Dogtag `base/acme` |
-| 2027-03-15 | §6.3.2 | Max validity 100 days | `kipuka-est` |
-| 2029-03-15 | §6.3.2 | Max validity 47 days | `kipuka-est` |
-| 2029-03-15 | §4.2.1 | DCV data reuse max 10 days | Dogtag `base/acme` |
+| Date | Section | Requirement | Owner |
+|------|---------|------------|-------|
+| **Effective** | §4.2.2.1.3 | DNSSEC validation on CAA | Dogtag CA |
+| **Effective** | §3.2.2.9 | MPIC with 4 perspectives | Dogtag ACME |
+| **Effective** | §4.3.1.2 | Certificate linting | Both |
+| **Effective** | §4.9.9 | OCSP within 15 minutes | Dogtag OCSP |
+| **Effective** | §6.3.2 | Max validity 200 days | kipuka |
+| 2026-07-15 | §5.4.1 | Detailed verification logs | Both |
+| 2026-09-15 | §7.1.3.2.1 | SHA-1 sunset (certs + CRLs) | Both |
+| 2026-12-15 | §3.2.2.9 | MPIC with 5 perspectives | Dogtag ACME |
+| 2027-03-15 | §4.2.2.1.2 | CAA `accounturi` processing | Dogtag CA |
+| 2027-03-15 | §3.2.2.4 | DCV method sunset | Dogtag ACME |
+| 2027-03-15 | §6.3.2 | Max validity 100 days | kipuka |
+| 2029-03-15 | §6.3.2 | Max validity 47 days | kipuka |
+| 2029-03-15 | §4.2.1 | DCV reuse max 10 days | Dogtag ACME |
 
 ## Compliance Checklist
 
-| Requirement | BR Section | Component | Status |
-|-------------|-----------|-----------|--------|
-| RSA >= 2048 bits | §6.1.5 | `kipuka-est` | Enforced |
-| ECDSA P-256/P-384/P-521 | §6.1.5 | `kipuka-est` | Enforced |
-| RSA exponent validation | §6.1.6 | `kipuka-est` + `synta` | Not Implemented |
-| Weak key rejection (Debian/ROCA/Fermat) | §6.1.1.3 | `kipuka-est` | Not Implemented |
-| Serial >= 64 bits CSPRNG | §7.1 | `kipuka-est` (+ `kipuka-hsm`) | Exceeded (160 bits) |
-| AKI present | §7.1.2.11.1 | `synta` | Enforced |
-| SKI present | §7.1.2.11.4 | `synta` | Enforced |
-| `CA:FALSE` for EE certs | §7.1.2.7.8 | `synta` | Enforced |
-| `pathLenConstraint` MUST NOT for EE | §7.1.2.7.8 | `synta` | Enforced (absent) |
-| Key Usage critical | §7.1.2.7.11 | `synta` | Enforced |
-| EKU with `serverAuth` | §7.1.2.7.10 | `synta` | Enforced |
-| SAN required | §7.1.2.7.12 | `kipuka-est` | Enforced |
-| CN matches SAN | §7.1.4.3 | `kipuka-est` | Enforced |
-| AIA present (OCSP, caIssuers) | §7.1.2.7.7 | `synta` | Not Implemented |
-| CRL Distribution Points | §7.1.2.11.2 | `synta` | Not Implemented |
-| Certificate Policies with Reserved OID | §7.1.2.7.9 | `synta` | Partial |
-| `organizationalUnitName` prohibited | §7.1.2.10.2 | `kipuka-est` | Not Implemented |
-| Max validity period | §6.3.2 | `kipuka-est` | Enforced |
-| `notBefore` within 48 hours | §7.1.2.7 | `kipuka-est` | Not Enforced |
-| DN encoding (UTF8String) | §7.1.4 | `synta` | Enforced |
-| IDN A-label only | §7.1.4.2 | `kipuka-est` | Enforced |
-| Name Constraints enforcement | §7.1.5 | `kipuka-est` | Enforced |
-| `/serverkeygen` key protection | §6.1.2 | `kipuka-est` + `synta` | Enforced |
-| SHA-1 signing rejection | §7.1.3.2 | `kipuka-est` | Not Enforced |
-| Domain validation | §3.2.2.4 | Dogtag `base/acme` | CA Responsibility |
-| CAA record processing | §4.2.2.1 | Dogtag `base/ca` | Not Implemented |
-| DNSSEC validation of CAA | §4.2.2.1.3 | Dogtag `base/ca` | Not Implemented |
-| Multi-Perspective Issuance | §3.2.2.9 | Dogtag `base/acme` | Not Implemented |
-| Certificate Transparency | §4.3.1.2 | Dogtag `base/ca` (`CTEngine`) | Available |
-| Certificate linting (pre-sign) | §4.3.1.2 | `kipuka-est` | Not Implemented |
-| Certificate linting (post-sign) | §4.3.1.2 | Dogtag `base/ca` | Not Implemented |
-| OCSP within 15 minutes | §4.9.9 | Dogtag `base/ocsp` | Available |
-| CRL issuance frequency | §4.9.7 | Dogtag `base/ca` | Available |
-| Revocation processing | §4.9.1 | Dogtag `base/ca` | Available |
-| Mass revocation plan | §5.7.1.2 | Operational | Procedure required |
+### kipuka Enforcement
+
+| Requirement | Section | Status |
+|-------------|---------|--------|
+| RSA >= 2048 bits | §6.1.5 | Enforced |
+| ECDSA P-256/P-384/P-521 | §6.1.5 | Enforced |
+| RSA exponent validation | §6.1.6 | Not Implemented |
+| Weak key rejection | §6.1.1.3 | Not Implemented |
+| Serial >= 64 bits CSPRNG | §7.1 | Exceeded (160 bits) |
+| AKI present | §7.1.2.11.1 | Enforced |
+| SKI present | §7.1.2.11.4 | Enforced |
+| `CA:FALSE` for EE certs | §7.1.2.7.8 | Enforced |
+| `pathLen` MUST NOT for EE | §7.1.2.7.8 | Enforced (absent) |
+| Key Usage critical | §7.1.2.7.11 | Enforced |
+| EKU with `serverAuth` | §7.1.2.7.10 | Enforced |
+| SAN required | §7.1.2.7.12 | Enforced |
+| CN matches SAN | §7.1.4.3 | Enforced |
+| AIA (OCSP, caIssuers) | §7.1.2.7.7 | Not Implemented |
+| CRL Distribution Points | §7.1.2.11.2 | Not Implemented |
+| Certificate Policies (Reserved OID) | §7.1.2.7.9 | Partial |
+| OU prohibited | §7.1.2.10.2 | Not Implemented |
+| Max validity period | §6.3.2 | Enforced |
+| `notBefore` within 48 hours | §7.1.2.7 | Not Enforced |
+| DN encoding (UTF8String) | §7.1.4 | Enforced |
+| IDN A-label only | §7.1.4.2 | Enforced |
+| Name Constraints | §7.1.5 | Enforced |
+| `/serverkeygen` key protection | §6.1.2 | Enforced |
+| SHA-1 signing rejection | §7.1.3.2 | Not Enforced |
+| Certificate linting (pre-sign) | §4.3.1.2 | Not Implemented |
+
+### Dogtag CA Enforcement
+
+| Requirement | Section | Status |
+|-------------|---------|--------|
+| Domain validation | §3.2.2.4 | Available (ACME) |
+| CAA record processing | §4.2.2.1 | Not Implemented |
+| DNSSEC validation of CAA | §4.2.2.1.3 | Not Implemented |
+| Multi-Perspective Issuance | §3.2.2.9 | Not Implemented |
+| Certificate Transparency | §4.3.1.2 | Available (CTEngine) |
+| Certificate linting (post-sign) | §4.3.1.2 | Not Implemented |
+| OCSP within 15 minutes | §4.9.9 | Available |
+| CRL issuance frequency | §4.9.7 | Available |
+| Revocation processing | §4.9.1 | Available |
+| Mass revocation plan | §5.7.1.2 | Procedure required |
