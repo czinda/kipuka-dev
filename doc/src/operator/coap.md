@@ -328,7 +328,7 @@ podman run --rm \
   -v ./certs:/etc/kipuka/certs:ro \
   -p 9443:9443 \
   -p 5684:5684/udp \
-  registry.kipuka.dev/kipuka:latest
+  quay.io/kipuka/kipuka:latest
 ```
 
 Note the `/udp` suffix on port 5684 -- without it, only TCP is exposed.

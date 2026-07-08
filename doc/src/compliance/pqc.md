@@ -218,7 +218,7 @@ openssl list -signature-algorithms | grep -i dilithium
 
 **Alternative (Docker):** Use the kipuka container image which includes OpenSSL 3.5 with PQC support:
 ```bash
-podman run -it registry.kipuka.dev/heebus/kipuka:latest openssl version
+podman run -it quay.io/heebus/kipuka:latest openssl version
 ```
 
 ## HSM Support Roadmap

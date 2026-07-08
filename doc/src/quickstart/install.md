@@ -13,15 +13,15 @@ image, building from source, and installing as a systemd service.
 
 ## Container (fastest)
 
-Pre-built images are published to the kipuka container registry for both
-`x86_64` and `aarch64`:
+Pre-built images are published to [quay.io](https://quay.io/kipuka/kipuka) for
+both `x86_64` and `aarch64`:
 
 ```bash
 # x86_64 (default)
-podman pull registry.kipuka.dev/kipuka:latest
+podman pull quay.io/kipuka/kipuka:latest
 
 # Apple Silicon / ARM servers
-podman pull registry.kipuka.dev/kipuka:latest-arm64
+podman pull quay.io/kipuka/kipuka:latest-arm64
 ```
 
 Run the container with a bind-mounted configuration directory:
@@ -32,7 +32,7 @@ podman run -d \
   -p 9443:9443 \
   -v /etc/kipuka:/etc/kipuka:ro \
   -v /var/lib/kipuka:/var/lib/kipuka:rw \
-  registry.kipuka.dev/kipuka:latest \
+  quay.io/kipuka/kipuka:latest \
   kipuka --config /etc/kipuka/kipuka.toml
 ```
 
