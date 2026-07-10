@@ -17,7 +17,25 @@
     }
 
     const theme = lastThemeWasLight ? 'default' : 'dark';
-    mermaid.initialize({ startOnLoad: true, theme });
+    mermaid.initialize({
+        startOnLoad: true,
+        theme,
+        fontSize: 16,
+        flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true,
+            curve: 'basis',
+            nodeSpacing: 60,
+            rankSpacing: 70,
+            padding: 20,
+            defaultRenderer: 'dagre-wrapper',
+        },
+        themeVariables: {
+            fontSize: '16px',
+            fontFamily: "ui-monospace, 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Menlo, monospace",
+            edgeLabelBackground: '#0d1117',
+        },
+    });
 
     // Simplest way to make mermaid re-render the diagrams in the new theme is via refreshing the page
 

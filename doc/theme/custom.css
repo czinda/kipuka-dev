@@ -260,33 +260,50 @@ html.navy .searchresults a {
 .mermaid {
   background: transparent !important;
   text-align: center;
-  margin: 1.5rem 0;
+  margin: 2rem 0;
+  overflow-x: auto;
 }
 
 .mermaid svg {
-  max-width: 100%;
-  height: auto;
-}
-
-/* Edge labels */
-.mermaid .edgeLabel {
-  background-color: var(--kipuka-bg) !important;
-  color: #8b949e !important;
-  font-size: 0.8rem;
-  padding: 2px 6px;
-  border-radius: 3px;
+  min-width: 700px;
+  max-width: none !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 400px;
 }
 
 /* Node text legibility */
 .mermaid .nodeLabel {
   color: #e2e8f0 !important;
   font-family: var(--kipuka-mono) !important;
-  font-size: 0.8rem;
+  font-size: 1rem !important;
+  line-height: 1.4 !important;
+}
+
+/* Edge labels */
+.mermaid .edgeLabel {
+  background-color: var(--kipuka-bg) !important;
+  color: #c9d1d9 !important;
+  font-size: 0.9rem !important;
+  padding: 4px 8px !important;
+  border-radius: 3px;
+}
+
+.mermaid .edgeLabel p {
+  font-size: 0.9rem !important;
+  color: #c9d1d9 !important;
+}
+
+/* Subgraph titles */
+.mermaid .cluster-label .nodeLabel {
+  font-size: 0.95rem !important;
+  color: #8b949e !important;
 }
 
 /* Edge lines */
 .mermaid .flowchart-link {
-  stroke: #30363d !important;
+  stroke: #484f58 !important;
+  stroke-width: 1.5px !important;
 }
 
 .mermaid marker path {
