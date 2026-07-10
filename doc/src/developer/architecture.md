@@ -6,32 +6,45 @@ compilation level and allows operators to build only the features they need.
 
 ## Workspace layout
 
-```
-                      Clients
-                     /        \
-           TLS + mTLS/OTP    CoAP/DTLS (UDP)
-                  |              |
-           +------+------+  kipuka-coap
-           |  kipuka-est  |  CoAP/DTLS transport
-           |  axum HTTP   |  (RFC 9483 / RFC 7252)
-           +--+---+--+---+------+
-              |   |  |          |
-    +---------+   |  +--------+ |
-    |             |           | |
-  kipuka-otp  kipuka-hsm  kipuka-util
-  OTP lifecycle PKCS#11    shared types
-               HSM ops       & config
-    |             |
-    |        kipuka-dogtag
-    |         Dogtag PKI
-    |         REST client
-    |
-  +---+-----+
-  |   sqlx  |
-  | sqlite  |
-  | postgres|
-  | mariadb |
-  +---------+
+```mermaid
+flowchart TD
+    clients["Clients"]:::client
+
+    clients -->|"TLS + mTLS / OTP"| est
+    clients -->|"CoAP / DTLS<br/>(UDP)"| coap
+
+    subgraph core [" "]
+        est["<b>kipuka-est</b><br/>axum HTTP · TLS · EST protocol<br/>auth · HA · admin API"]:::server
+        coap["<b>kipuka-coap</b><br/>CoAP / DTLS transport<br/>RFC 9483 · RFC 7252"]:::server
+    end
+
+    subgraph modules [" "]
+        otp["<b>kipuka-otp</b><br/>OTP lifecycle<br/>argon2id · rate limiting"]:::auth
+        hsm["<b>kipuka-hsm</b><br/>PKCS #11 / HSM<br/>cryptoki FFI"]:::crypto
+        util["<b>kipuka-util</b><br/>shared types · config<br/>ASN.1 · zeroize"]:::server
+    end
+
+    est --> otp
+    est --> hsm
+    est --> util
+    coap --> util
+
+    hsm --> dogtag
+    dogtag["<b>kipuka-dogtag</b><br/>Dogtag PKI<br/>REST client"]:::infra
+
+    otp --> db
+    est --> db
+    db[("sqlx<br/>SQLite · PostgreSQL<br/>MariaDB")]:::store
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+    classDef infra  fill:#1f0a18,stroke:#db2777,color:#e2e8f0
+
+    style core fill:none,stroke:none
+    style modules fill:none,stroke:none
 ```
 
 ### Crate responsibilities
@@ -49,6 +62,8 @@ Dependencies flow strictly downward: `kipuka-est` depends on all other crates;
 leaf crates (`kipuka-util`, `kipuka-coap`) depend on nothing project-internal
 except `kipuka-util`.
 
+---
+
 ## EST operation data flow
 
 A certificate enrollment request traverses one of two transport paths
@@ -56,73 +71,125 @@ A certificate enrollment request traverses one of two transport paths
 
 ### HTTPS transport (default)
 
-```
-1. Client opens TLS connection to kipuka-est (rustls).
-2. rustls performs TLS 1.2/1.3 handshake.
-   - If mTLS: client certificate is validated against configured trust anchors.
-   - If OTP:  TLS completes without client cert; HTTP Basic auth carries the token.
-3. axum routes the request based on URL path:
-   /.well-known/est/{label?}/simpleenroll  -> enroll handler
-   /.well-known/est/{label?}/simplereenroll -> reenroll handler
-   /.well-known/est/{label?}/cacerts       -> cacerts handler
-   /.well-known/est/{label?}/serverkeygen  -> serverkeygen handler
-   ...
-4. Label resolution: if a label segment is present, kipuka looks up the
-   [[est.label]] entry and resolves the bound [[ca]] configuration.
-   If absent, the default CA is used.
-5. Authentication:
-   a. mTLS: extract client certificate from TLS session, verify chain.
-   b. OTP:  extract Basic auth credentials, validate against kipuka-otp
-            (argon2 hash comparison, rate limiting, expiration check).
-   c. GSSAPI: validate Negotiate header against KDC, map principal.
-6. CSR parsing: the request body (application/pkcs10) is parsed by synta.
-   Key type, subject DN, SANs, and extensions are extracted and validated
-   against the label's policy (allowed_key_types, subject_pattern,
-   require_san, required_ext_key_usage).
-7. Certificate construction: synta builds the X.509 TBS (to-be-signed)
-   certificate from the validated CSR fields, CA configuration, and
-   label policy.  Serial number is generated from OsRng (CSPRNG).
-8. Signing:
-   - File-based CA key: synta signs the TBS certificate directly.
-   - HSM-backed CA key: kipuka-hsm opens a PKCS#11 session and delegates
-     the sign operation to the hardware token.
-   - Dogtag back-end: kipuka-dogtag sends the CSR to the Dogtag REST API
-     and retrieves the signed certificate.
-9. Response: the signed certificate is wrapped in a PKCS#7 / CMS
-   ContentInfo envelope (DER-encoded) and returned with Content-Type
-   application/pkcs7-mime.
-10. Audit: an audit event is written to the configured destinations
-    (file, syslog, database) with request metadata, outcome, and
-    certificate fingerprint.
+```mermaid
+flowchart TD
+    C["Client"]:::client
+
+    subgraph transport ["Transport"]
+        TLS["<b>rustls</b><br/>TLS 1.2 / 1.3 handshake<br/>mTLS client cert or<br/>OTP via HTTP Basic"]:::crypto
+    end
+
+    subgraph routing ["Routing"]
+        ROUTER["<b>axum router</b><br/>/.well-known/est/{label}/simpleenroll<br/>/.well-known/est/{label}/simplereenroll<br/>/.well-known/est/{label}/cacerts<br/>/.well-known/est/{label}/serverkeygen"]:::server
+        LABEL["<b>Label resolution</b><br/>look up [[est.label]] entry<br/>resolve bound [[ca]] config"]:::server
+    end
+
+    subgraph authn ["Authentication"]
+        direction LR
+        MTLS["<b>mTLS</b><br/>verify client<br/>certificate chain"]:::auth
+        OTP["<b>OTP</b><br/>argon2id hash<br/>comparison"]:::auth
+        GSS["<b>GSSAPI</b><br/>SPNEGO /<br/>Kerberos"]:::auth
+    end
+
+    subgraph issue ["Issuance"]
+        CSR["<b>CSR parsing</b><br/>synta · key type · SANs<br/>policy validation"]:::server
+        TBS["<b>Certificate construction</b><br/>X.509 TBS · serial from<br/>OsRng (CSPRNG)"]:::server
+    end
+
+    subgraph sign ["Signing"]
+        direction LR
+        FILE["<b>File key</b><br/>synta direct<br/>signing"]:::crypto
+        HSM["<b>HSM</b><br/>PKCS#11<br/>session"]:::crypto
+        DOG["<b>Dogtag</b><br/>REST API<br/>delegation"]:::infra
+    end
+
+    RESP["<b>Response</b><br/>PKCS#7 / CMS envelope<br/>DER-encoded"]:::server
+    AUDIT["<b>Audit</b><br/>file · syslog · database"]:::store
+
+    C --> TLS
+    TLS --> ROUTER
+    ROUTER --> LABEL
+    LABEL --> authn
+    MTLS --> CSR
+    OTP --> CSR
+    GSS --> CSR
+    CSR --> TBS
+    TBS --> sign
+    FILE --> RESP
+    HSM --> RESP
+    DOG --> RESP
+    RESP --> AUDIT
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+    classDef infra  fill:#1f0a18,stroke:#db2777,color:#e2e8f0
+
+    style transport fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style routing fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style authn fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style issue fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style sign fill:none,stroke:#30363d,stroke-dasharray:5 5
 ```
 
 ### CoAP/DTLS transport (constrained devices)
 
+```mermaid
+flowchart TD
+    D["IoT device"]:::client
+
+    subgraph transport ["Transport"]
+        DTLS["<b>OpenSSL</b><br/>DTLS 1.2 / 1.3<br/>PSK or certificate mode"]:::crypto
+    end
+
+    subgraph coap_parse ["CoAP processing"]
+        COAP["<b>CoAP parser</b><br/>method · URI path · Content-Format"]:::server
+        BLK["<b>Block-wise transfer</b><br/>RFC 7959 · reassemble<br/>incoming blocks"]:::server
+    end
+
+    subgraph paths ["CoAP → EST path mapping"]
+        direction LR
+        SEN["/sen → SimpleEnroll"]:::server
+        SREN["/sren → SimpleReenroll"]:::server
+        SKG["/skg → ServerKeygen"]:::server
+        ATT["/att → CsrAttrs"]:::server
+        CRTS["/crts → CaCerts"]:::server
+    end
+
+    EST["<b>CoapEstHandler</b><br/>shared EST logic<br/>(same as HTTPS steps 5–9)"]:::server
+    RESP["<b>CoAP 2.05 Content</b><br/>raw DER · Content-Format ID"]:::server
+    AUDIT["<b>Audit log</b>"]:::store
+
+    D -->|"UDP :5684"| DTLS
+    DTLS --> COAP
+    COAP --> BLK
+    BLK --> paths
+    SEN --> EST
+    SREN --> EST
+    SKG --> EST
+    ATT --> EST
+    CRTS --> EST
+    EST --> RESP
+    RESP --> AUDIT
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+
+    style transport fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style coap_parse fill:none,stroke:#30363d,stroke-dasharray:5 5
+    style paths fill:none,stroke:#30363d,stroke-dasharray:5 5
 ```
-1. Client sends a CoAP message over UDP to the CoapDtlsServer listener
-   (default port 5684).
-2. OpenSSL performs the DTLS 1.2/1.3 handshake.
-   - PSK mode: shared secret authenticates the device.
-   - Certificate mode: client certificate validated against trust anchors.
-3. The CoAP message is parsed: method (GET/POST), URI path, Content-Format
-   option, and payload are extracted.
-4. URI path routing maps abbreviated CoAP paths to EST operations:
-   /sen   -> SimpleEnroll
-   /sren  -> SimpleReenroll
-   /skg   -> ServerKeygen
-   /att   -> CsrAttrs
-   /crts  -> CaCerts
-5. Block-wise transfer (RFC 7959): if the request uses Block1 options,
-   incoming blocks are reassembled into the full CSR payload.  Responses
-   exceeding the negotiated block size use Block2 for chunked delivery.
-6. The CoapEstHandler (implements the EstHandler trait) bridges the
-   parsed request to the same CSR validation, certificate construction,
-   and signing logic used by the HTTPS path (steps 5-9 above).
-7. The response (raw DER, not base64) is returned as a CoAP 2.05 Content
-   message with the appropriate Content-Format ID (e.g., 281 for
-   certs-only, 287 for csrattrs).
-8. Audit: an audit event is written identically to the HTTPS path.
-```
+
+Both paths converge on the same CSR validation, certificate construction, and
+signing logic — the `EstHandler` trait abstracts transport details so the core
+enrollment code is shared between HTTPS and CoAP.
+
+---
 
 ## Multi-CA HA failover state machine
 
@@ -130,28 +197,26 @@ When `[ha]` is enabled, each CA in an `[[ha.group]]` transitions through four
 states.  The HA controller runs periodic health checks and manages transitions
 automatically.
 
-```
-                   check passes
-          +---------------------------+
-          |                           |
-          v                           |
-    +-----------+    check fails    +-----------+
-    |  Healthy  | ----------------> |  Degraded |
-    +-----------+                   +-----------+
-          ^                           |
-          |                           | failure_threshold
-          |                           | consecutive failures
-          |                           v
-    +-----------+    check passes   +-----------+
-    |  Recovery | <---------------- | Failed    |
-    +-----------+   after           +-----------+
-          |         recovery_timeout
-          | sustained success
-          | (failure_threshold checks pass)
-          v
-    +-----------+
-    |  Healthy  |
-    +-----------+
+```mermaid
+flowchart LR
+    H["<b>Healthy</b><br/>operational<br/>receiving traffic"]:::server
+    D["<b>Degraded</b><br/>checks failing<br/>still serving"]:::auth
+    F["<b>Failed</b><br/>removed from<br/>routing pool"]:::infra
+    R["<b>Recovery</b><br/>probing<br/>no traffic yet"]:::crypto
+
+    H -- "health check<br/>fails" --> D
+    D -- "check<br/>passes" --> H
+    D -- "failure_threshold<br/>consecutive<br/>failures" --> F
+    F -- "recovery_timeout<br/>elapsed" --> R
+    R -- "sustained success<br/>(threshold<br/>checks pass)" --> H
+    R -- "check fails<br/>during<br/>recovery" --> F
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+    classDef infra  fill:#1f0a18,stroke:#db2777,color:#e2e8f0
 ```
 
 **State definitions:**
@@ -182,23 +247,46 @@ Dogtag-backed CAs, a REST API ping) to verify that the CA can actually issue
 certificates.  Network reachability alone is insufficient -- a reachable HSM
 that has entered an error state must still be detected as unhealthy.
 
+---
+
 ## Authentication flow
 
 ### OTP validation path
 
-```
-Client ---[HTTP Basic: entity_id:otp_value]---> kipuka-est
-  |
-  +-> kipuka-otp: look up entity_id in database
-      |
-      +-> Check expiration (expires_at > now)
-      +-> Check use count (uses < max_uses)
-      +-> Check lockout (failed_attempts < max_failures within failure_window)
-      +-> Hash provided OTP with argon2id
-      +-> Timing-safe comparison (subtle::ConstantTimeEq) against stored hash
-      |
-      +-> On success: increment use count, clear failure counter, return Ok
-      +-> On failure: increment failed_attempts, check lockout threshold
+```mermaid
+flowchart TD
+    C["<b>Client</b><br/>HTTP Basic: entity_id : otp_value"]:::client
+
+    LOOKUP["Look up entity_id<br/>in database"]:::store
+
+    EXP{"Expired?<br/>expires_at > now"}:::auth
+    USE{"Max uses<br/>reached?"}:::auth
+    LOCK{"Locked out?<br/>failed_attempts<br/>≥ max_failures"}:::auth
+
+    HASH["Hash provided OTP<br/>with argon2id"]:::crypto
+    CMP{"Timing-safe comparison<br/>subtle::ConstantTimeEq"}:::crypto
+
+    OK["<b>Success</b><br/>increment use count<br/>clear failure counter"]:::server
+    FAIL["<b>Failure</b><br/>increment failed_attempts<br/>check lockout threshold"]:::infra
+
+    C --> LOOKUP
+    LOOKUP --> EXP
+    EXP -- "not expired" --> USE
+    EXP -- "expired" --> FAIL
+    USE -- "within limit" --> LOCK
+    USE -- "exhausted" --> FAIL
+    LOCK -- "not locked" --> HASH
+    LOCK -- "locked" --> FAIL
+    HASH --> CMP
+    CMP -- "match" --> OK
+    CMP -- "mismatch" --> FAIL
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+    classDef infra  fill:#1f0a18,stroke:#db2777,color:#e2e8f0
 ```
 
 OTP values are never stored in plaintext.  The `argon2id` hash is computed at
@@ -207,33 +295,53 @@ returned to the administrator exactly once in the generation response.
 
 ### mTLS certificate chain validation
 
-```
-Client ---[TLS ClientHello + Certificate]---> rustls
-  |
-  +-> rustls verifies:
-      1. Certificate signature is valid
-      2. Certificate is not expired
-      3. Issuer chain terminates at a configured trust anchor
-      4. Key usage includes digitalSignature
-      5. Extended key usage includes clientAuth (if enforced)
-  |
-  +-> kipuka-est extracts:
-      - Subject DN (for audit and authorization)
-      - Serial number (for certificate identity tracking)
-      - SAN entries (for device identification)
+```mermaid
+flowchart TD
+    C["<b>Client</b><br/>TLS ClientHello<br/>+ Certificate"]:::client
+
+    subgraph rustls_verify ["rustls verification"]
+        SIG["Verify certificate<br/>signature is valid"]:::crypto
+        EXP["Check certificate<br/>is not expired"]:::crypto
+        CHAIN["Issuer chain terminates<br/>at configured trust anchor"]:::crypto
+        KU["Key usage includes<br/>digitalSignature"]:::crypto
+        EKU["Extended key usage<br/>includes clientAuth"]:::crypto
+    end
+
+    EXTRACT["<b>kipuka-est extracts</b><br/>Subject DN (audit + authz)<br/>Serial number (identity tracking)<br/>SAN entries (device identification)"]:::server
+
+    C --> SIG
+    SIG --> EXP
+    EXP --> CHAIN
+    CHAIN --> KU
+    KU --> EKU
+    EKU --> EXTRACT
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+
+    style rustls_verify fill:none,stroke:#30363d,stroke-dasharray:5 5
 ```
 
 ### GSSAPI / Kerberos
 
+```mermaid
+flowchart LR
+    C["<b>Client</b><br/>Negotiate:<br/>SPNEGO token"]:::client
+    CTX["Accept security<br/>context using<br/>server keytab"]:::auth
+    PRINC["Extract<br/>authenticated<br/>principal<br/>user@REALM"]:::auth
+    MAP["Map principal to<br/>certificate subject<br/>via principal_mapping<br/>or default_template"]:::server
+    SUBJ["Mapped subject →<br/>certificate<br/>construction"]:::crypto
+
+    C --> CTX --> PRINC --> MAP --> SUBJ
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
 ```
-Client ---[Negotiate: base64(SPNEGO token)]---> kipuka-est
-  |
-  +-> Accept security context using server keytab
-  +-> Extract authenticated principal (e.g., user@REALM)
-  +-> Map principal to certificate subject via [gssapi.principal_mapping]
-      or default_template
-  +-> Return mapped subject for certificate construction
-```
+
+---
 
 ## Database schema overview
 
@@ -289,44 +397,44 @@ through sequential migrations in `migrations/{sqlite,postgres,mariadb}/`.
 | `entity_id` | TEXT | Associated entity (from OTP or mTLS subject) |
 | `pem` | TEXT | Full PEM-encoded certificate (optional, controlled by config) |
 
+---
+
 ## EST label routing
 
 EST labels are the primary mechanism for multi-profile and multi-CA operation.
 When a request arrives at `/.well-known/est/{label}/simpleenroll`, kipuka
 resolves the label to a `[[est.label]]` configuration entry:
 
-```
-Request URL: /.well-known/est/iot-devices/simpleenroll
-                                   |
-                                   v
-            +--------------------------------------+
-            | Label lookup: name == "iot-devices"  |
-            +--------------------------------------+
-                                   |
-                     ca_id = "iot-ca"
-                                   |
-                                   v
-            +--------------------------------------+
-            | CA lookup: id == "iot-ca"            |
-            | cert, key, chain, validity_days,     |
-            | hsm_slot, max_validity_days          |
-            +--------------------------------------+
-                                   |
-                                   v
-            +--------------------------------------+
-            | Policy enforcement:                  |
-            | - allowed_key_types                  |
-            | - required_ext_key_usage             |
-            | - require_san                        |
-            | - subject_pattern                    |
-            | - max_validity_days                  |
-            +--------------------------------------+
-                                   |
-                                   v
-            +--------------------------------------+
-            | Certificate issuance using resolved  |
-            | CA key material and label policy     |
-            +--------------------------------------+
+```mermaid
+flowchart TD
+    REQ["<b>Request URL</b><br/>/.well-known/est/<b>iot-devices</b>/simpleenroll"]:::client
+
+    LABEL["<b>Label lookup</b><br/>name == iot-devices"]:::server
+
+    CA["<b>CA lookup</b><br/>ca_id == iot-ca<br/>cert · key · chain<br/>validity_days · hsm_slot"]:::crypto
+
+    HA{"CA in HA group<br/>and in Failed state?"}:::infra
+
+    NEXT["Route to next healthy<br/>CA in group ca_ids"]:::server
+
+    POLICY["<b>Policy enforcement</b><br/>allowed_key_types<br/>required_ext_key_usage<br/>require_san · subject_pattern<br/>max_validity_days"]:::auth
+
+    ISSUE["<b>Certificate issuance</b><br/>using resolved CA key material<br/>and label policy"]:::crypto
+
+    REQ --> LABEL
+    LABEL -- "ca_id = iot-ca" --> CA
+    CA --> HA
+    HA -- "yes" --> NEXT
+    NEXT --> POLICY
+    HA -- "no" --> POLICY
+    POLICY --> ISSUE
+
+    classDef client fill:#1a2332,stroke:#3b82f6,color:#e2e8f0
+    classDef server fill:#132218,stroke:#16a34a,color:#e2e8f0
+    classDef crypto fill:#2d1a0a,stroke:#f0883e,color:#e2e8f0
+    classDef store  fill:#1f1a0a,stroke:#ca8a04,color:#e2e8f0
+    classDef auth   fill:#1a1025,stroke:#8b5cf6,color:#e2e8f0
+    classDef infra  fill:#1f0a18,stroke:#db2777,color:#e2e8f0
 ```
 
 Requests without a label segment (e.g., `/.well-known/est/simpleenroll`) use

@@ -13,4 +13,9 @@ preferred-dark-theme = "navy"
 git-repository-url = "https://codeberg.org/czinda/kipuka"
 site-url = "/doc/"
 additional-css = ["theme/custom.css"]
-additional-js = ["theme/home-link.js"]
+additional-js = ["theme/home-link.js", "mermaid.min.js", "mermaid-init.js"]
+
+[preprocessor]
+
+[preprocessor.mermaid]
+command = "mdbook-mermaid"

@@ -255,3 +255,40 @@ html.navy .searchresults a {
 .content strong {
   color: var(--kipuka-text-bright) !important;
 }
+
+/* ── Mermaid diagrams ───────────────────────── */
+.mermaid {
+  background: transparent !important;
+  text-align: center;
+  margin: 1.5rem 0;
+}
+
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Edge labels */
+.mermaid .edgeLabel {
+  background-color: var(--kipuka-bg) !important;
+  color: #8b949e !important;
+  font-size: 0.8rem;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+/* Node text legibility */
+.mermaid .nodeLabel {
+  color: #e2e8f0 !important;
+  font-family: var(--kipuka-mono) !important;
+  font-size: 0.8rem;
+}
+
+/* Edge lines */
+.mermaid .flowchart-link {
+  stroke: #30363d !important;
+}
+
+.mermaid marker path {
+  fill: #8b949e !important;
+}

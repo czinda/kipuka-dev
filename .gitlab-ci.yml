@@ -2,6 +2,7 @@ pages:
   image: rust:1.88-bookworm
   before_script:
     - cargo install mdbook --version 0.4.40 --locked 2>/dev/null || true
+    - cargo install mdbook-mermaid --locked 2>/dev/null || true
   script:
     - cd doc && mdbook build && cd ..
     - mkdir -p public/doc
