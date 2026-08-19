@@ -16,7 +16,7 @@ locally with Docker Compose.
 ## Clone and build
 
 ```bash
-git clone https://codeberg.org/czinda/kipuka.git
+git clone https://github.com/czinda/kipuka.git
 cd kipuka
 cargo build
 ```

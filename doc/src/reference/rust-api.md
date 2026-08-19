@@ -27,7 +27,7 @@ To generate and open the API documentation from a local checkout:
 
 ```bash
 # Clone the repository
-git clone https://codeberg.org/czinda/kipuka.git
+git clone https://github.com/czinda/kipuka.git
 cd kipuka
 
 # Build docs for all workspace crates (skip dependency docs for speed)

@@ -473,7 +473,7 @@
         <li><a href="/doc/operator/configuration.html">Config</a></li>
         <li><a href="/doc/compliance/rfc-support.html">RFCs</a></li>
         <li><a href="/api/">API</a></li>
-        <li><a href="https://codeberg.org/czinda/kipuka">Source</a></li>
+        <li><a href="https://github.com/czinda/kipuka">Source</a></li>
       </ul>
     </div>
   </nav>
@@ -498,7 +498,7 @@
       </p>
       <div class="hero-ctas">
         <a href="/doc/quickstart/install.html" class="btn btn-primary">Get Started</a>
-        <a href="https://codeberg.org/czinda/kipuka" class="btn btn-secondary">View on Codeberg</a>
+        <a href="https://github.com/czinda/kipuka" class="btn btn-secondary">View on GitHub</a>
       </div>
       <blockquote class="hero-metaphor">
         <strong>kipuka</strong> (Hawaiian) &mdash; an area of older land surrounded by
@@ -534,8 +534,16 @@
         <div class="feature-card">
           <h3>CMS-EST &amp; STAR</h3>
           <p>CMS-wrapped EST (RFC 8295) with SignedData/EnvelopedData for
-             air-gapped deployments. STAR short-lived certificates (RFC 8739) for
-             the CA/B Forum 47-day validity mandate.</p>
+             air-gapped and disconnected environments. Enrollment requests cross
+             network boundaries via removable media or data diodes &mdash; the CA
+             never touches the untrusted network. Purpose-built for frozen devices
+             that cannot migrate to PQC: sealed hardware, regulatory-locked
+             platforms, and long-lifecycle embedded systems that will run classical
+             crypto for their entire service life. Combined with MTC transparency
+             logging, every classical certificate issued to a frozen device is
+             recorded and monitored &mdash; unauthorized issuance is detected
+             automatically. STAR short-lived certificates (RFC 8739) for the
+             CA/B Forum 47-day validity mandate with integrated renewal loop.</p>
         </div>
         <div class="feature-card">
           <h3>Multi-CA &amp; HA</h3>
@@ -686,7 +694,7 @@
         </div>
         <div class="quickstart-card">
           <p class="qs-label">Build from source</p>
-          <code><span class="cmd">git clone</span> <span class="flag">https://codeberg.org/czinda/kipuka</span>
+          <code><span class="cmd">git clone</span> <span class="flag">https://github.com/czinda/kipuka</span>
 <span class="cmd">cd</span> kipuka
 
 <span class="cmd">cargo build</span> --release
@@ -754,8 +762,8 @@ OTP lifecycle PKCS#11        shared types
         <div class="footer-col">
           <h4>Community</h4>
           <ul>
-            <li><a href="https://codeberg.org/czinda/kipuka">Source</a></li>
-            <li><a href="https://codeberg.org/czinda/kipuka/issues">Issue Tracker</a></li>
+            <li><a href="https://github.com/czinda/kipuka">Source</a></li>
+            <li><a href="https://github.com/czinda/kipuka/issues">Issue Tracker</a></li>
             <li><a href="/doc/developer/contributing.html">Contributing</a></li>
           </ul>
         </div>

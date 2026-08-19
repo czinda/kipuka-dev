@@ -45,6 +45,59 @@ Military, maritime, or remote infrastructure scenarios:
 3. Periodic sync transfers requests to headquarters
 4. Responses are synced back during next connectivity window
 
+### Frozen Device Enrollment During PQC Migration
+
+As organizations migrate from classical cryptography (RSA/ECC) to post-quantum algorithms (ML-DSA, ML-KEM), some devices **cannot migrate** — sealed hardware, regulatory-locked platforms (FDA 510(k), Common Criteria EAL4+), and long-lifecycle embedded systems (20-30 year weapon platforms, industrial SCADA controllers). These "frozen devices" will continue using classical certificates for their entire remaining service life.
+
+CMS-EST is the enrollment protocol for frozen devices because these systems typically:
+
+- Operate behind air gaps or data diodes with no direct CA connectivity
+- Cannot run ACME clients (constrained protocol stacks)
+- Require offline enrollment that survives network outages spanning weeks or months
+- Need certificate renewal without firmware updates
+
+**Enrollment workflow for frozen devices:**
+
+1. Frozen device generates a CSR using its existing classical key (RSA/ECC)
+2. CSR is wrapped in CMS `SignedData` for integrity and optionally `EnvelopedData` for confidentiality
+3. CMS-wrapped request crosses the air gap via removable media, data diode, or courier
+4. Operator submits to kipuka's CMS-EST endpoint on the connected network
+5. kipuka processes the request against the Dogtag CA, which issues a classical certificate per the device's certificate profile
+6. Signed certificate response is CMS-wrapped and carried back across the air gap
+7. Device imports the certificate
+
+**MTC transparency integration:**
+
+When combined with Merkle Tree Certificate transparency logging, every classical certificate issued to a frozen device is recorded in a tamper-evident log. An independent monitor validates each issuance against a frozen device registry:
+
+- **Authorized:** The device identity, issuing CA, and algorithm match the frozen device record → issuance proceeds normally
+- **Unauthorized identity:** A classical certificate is requested for an entity not in the frozen device registry → alert (potential attack or misconfiguration)
+- **Wrong CA:** A classical certificate for a known frozen device is issued by an unexpected CA → alert (CA compromise)
+- **Wrong algorithm:** A classical certificate uses a weaker algorithm than authorized (e.g., RSA-1024 instead of RSA-2048) → alert (downgrade)
+- **Expired authorization:** A classical certificate is requested after the frozen device record's expiry date → alert (device should have been migrated or decommissioned)
+
+This turns frozen devices from an unmonitored security blind spot into an audited, policy-controlled exception within the broader PQC migration.
+
+**Configuration for frozen device profiles:**
+
+```toml
+[cms_est]
+enabled = true
+require_signed_requests = true
+encrypt_responses = true
+
+# Frozen device certificate profiles restrict algorithm and validity
+# These are enforced by the Dogtag CA certificate profile, not kipuka
+# kipuka passes the enrollment request to the CA, which applies profile constraints
+```
+
+The Dogtag CA certificate profile for frozen devices should enforce:
+
+- Classical algorithms only (RSA-2048, RSA-3072, or ECDSA-P256 per device capability)
+- Maximum validity period aligned with the device's remaining service life
+- Key usage restrictions appropriate to the device's function
+- Extended key usage limiting the certificate's applicability
+
 ## Configuration
 
 Enable CMS-EST in your `kipuka.toml` configuration:

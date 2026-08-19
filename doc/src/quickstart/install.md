@@ -49,7 +49,7 @@ The container image ships a minimal filesystem.  All state lives in
 Clone the repository and build in release mode:
 
 ```bash
-git clone https://codeberg.org/czinda/kipuka.git
+git clone https://github.com/czinda/kipuka.git
 cd kipuka
 cargo build --release
 ```
@@ -118,7 +118,7 @@ Install the unit file at `/etc/systemd/system/kipuka.service`:
 ```ini
 [Unit]
 Description=kipuka EST enrollment server
-Documentation=https://codeberg.org/czinda/kipuka
+Documentation=https://github.com/czinda/kipuka
 After=network-online.target
 Wants=network-online.target
 

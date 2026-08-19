@@ -9,7 +9,7 @@ kipuka is licensed under the **GNU General Public License v3.0 or later**
 (GPL-3.0-or-later).  The full license text is in the `LICENSE` file at the
 repository root.
 
-Source: [https://codeberg.org/czinda/kipuka](https://codeberg.org/czinda/kipuka)
+Source: [https://github.com/czinda/kipuka](https://github.com/czinda/kipuka)
 
 ### Contribution licensing
 
@@ -262,7 +262,7 @@ email.
 
 ### Workflow
 
-1. Fork the repository on Codeberg
+1. Fork the repository on GitHub
 2. Create a feature branch from `main`
 3. Make your changes (following the conventions above)
 4. Run the full check suite:
@@ -297,9 +297,9 @@ changes require two reviews.  CI must pass before merge.
 
 ## Feature requests and bug reports
 
-File issues on the Codeberg issue tracker:
+File issues on the GitHub issue tracker:
 
-[https://codeberg.org/czinda/kipuka/issues](https://codeberg.org/czinda/kipuka/issues)
+[https://github.com/czinda/kipuka/issues](https://github.com/czinda/kipuka/issues)
 
 For feature requests, describe the use case and expected behavior.  For bugs,
 include:
