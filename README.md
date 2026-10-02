@@ -3,6 +3,9 @@
 The documentation site deploys from the private `czinda/kipuka-dev` GitHub repository
 to the `kipuka-dev` Cloudflare Worker. Pushes to **main** run **npm run build**, validate
 the generated pages, then run **npx wrangler deploy**. Build caching is enabled.
+The **Publish website** GitHub Actions workflow verifies publication and invokes a
+main-branch Cloudflare deploy hook if no native push build starts. Its narrow hook URL
+is stored as the `CLOUDFLARE_DEPLOY_HOOK` repository secret, not in source control.
 
 `KIPUKA_REF` pins the public `czinda/kipuka` source revision used for Rust API docs.
 Update that file to publish API changes; source-repo commits alone do not rebuild this site.
