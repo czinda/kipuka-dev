@@ -24,4 +24,5 @@ identifies the site and API revisions actually served.
 `kipuka.dev` is a native Worker custom domain. The old Cloudflare Pages project is retired.
 Rollback by reverting a Git commit or selecting a previous Worker version.
 The `origin` remote remains the original GitLab repository; use `git push github main`
-for production website releases. Untracked local artwork is not part of the migration.
+for production website releases. Verify the **Workers Builds: kipuka-dev** GitHub check
+and the commit in `/build-info.json` after publishing.
