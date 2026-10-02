@@ -14,3 +14,4 @@ api/
 doc-build/
 deploy/
 doc-site/
+.build/
