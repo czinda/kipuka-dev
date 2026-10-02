@@ -20,6 +20,13 @@ if ! command -v rustup >/dev/null; then
 fi
 rustup toolchain install 1.97.1 --profile minimal --no-self-update
 export RUSTUP_TOOLCHAIN=1.97.1
+if [[ "$(uname -s)" == Linux ]]; then
+  # native-ossl uses bindgen; libclang is not included in Workers Builds.
+  python3 -m venv .build/clang-env
+  .build/clang-env/bin/pip install --disable-pip-version-check libclang==18.1.1
+  export LIBCLANG_PATH="$(.build/clang-env/bin/python -c 'import clang; from pathlib import Path; print(Path(clang.__file__).parent / "native")')"
+  export BINDGEN_EXTRA_CLANG_ARGS="-I$(cc -print-file-name=include) ${BINDGEN_EXTRA_CLANG_ARGS:-}"
+fi
 if ! command -v cmake >/dev/null; then
   python3 -m venv .build/cmake-env
   .build/cmake-env/bin/pip install --disable-pip-version-check cmake==4.1.2

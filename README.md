@@ -7,7 +7,8 @@ the generated pages, then run **npx wrangler deploy**. Build caching is enabled.
 `KIPUKA_REF` pins the public `czinda/kipuka` source revision used for Rust API docs.
 Update that file to publish API changes; source-repo commits alone do not rebuild this site.
 The cloud build installs pinned mdBook/Mermaid/Rust tooling and uses locked vendored OpenSSL
-for rustdoc. Generated output and the source checkout stay under ignored directories.
+for rustdoc. The Linux build installs libclang for native OpenSSL bindings. Generated
+output and the source checkout stay under ignored directories.
 
 ```bash
 npm ci
